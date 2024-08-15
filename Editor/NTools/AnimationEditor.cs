@@ -1,12 +1,9 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Easy;
 using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(Animation))]
-public class AnimationPlay : Editor
+public class AnimationPlay : UnityEditor.Editor
 {
     public void OnEnable()
     {
@@ -53,10 +50,8 @@ public class AnimationPlay : Editor
     }
 }
 
-
-
 [CustomEditor(typeof(EAnimation))]
-public class EAnimationEditor : Editor
+public class EAnimationEditor : UnityEditor.Editor
 {
     private string aniName = "show";
     public override void OnInspectorGUI()
@@ -76,7 +71,7 @@ public class EAnimationEditor : Editor
 }
 
 [CustomEditor(typeof(ECharacter))]
-public class ECharacterEditor : Editor
+public class ECharacterEditor : UnityEditor.Editor
 {
     private string aniName = "show";
     public override void OnInspectorGUI()

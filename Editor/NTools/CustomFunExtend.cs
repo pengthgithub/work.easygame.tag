@@ -26,9 +26,8 @@ public static class CustomFunExtend
             SceneManager.LoadScene("Game");
         }
     }
-
-
-    private static readonly Type kToolbarType = typeof(Editor).Assembly.GetType("UnityEditor.Toolbar");
+    
+    private static readonly Type kToolbarType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.Toolbar");
     private static ScriptableObject sCurrentToolbar;
 
 

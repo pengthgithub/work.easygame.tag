@@ -1,9 +1,7 @@
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Editor.Build;
 using UnityEditor;
-using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 using UnityEngine.Networking;
 using WeChatWASM;

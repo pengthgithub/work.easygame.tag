@@ -36,6 +36,12 @@ public class AddressTools
         AddGroupToAddress("uibg", "Assets/Art/UI/bg", "*.*", PathType.simpleNameWithExten);
         AddGroupToAddress("font", "Assets/Art/UI/font", "*.*", PathType.simpleNameWithExten);
         AddGroupToAddress("ui", "Assets/Art/UI", "*.*", PathType.simpleName, true);
+        
+        
+        
+        
+        
+        
     }
 
     enum PathType

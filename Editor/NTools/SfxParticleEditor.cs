@@ -9,7 +9,7 @@ namespace Easy
 {
     //https://blog.csdn.net/qq_34035956/article/details/125150682
     [CustomEditor(typeof(SfxParticle))]
-    public class SfxParticleEditor : Editor
+    public class SfxParticleEditor : UnityEditor.Editor
     {
         private bool _singleCast = true;
         private bool _needTarget = true;
