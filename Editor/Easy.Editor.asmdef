@@ -1,0 +1,25 @@
+{
+    "name": "EasyGame.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:b93d9b3a54cbb3d43b10653bf6f59040",
+        "GUID:69448af7b92c7f342b298e06a37122aa",
+        "GUID:9e24947de15b9834991c9d8411ea37cf",
+        "GUID:cd58129ed96f0f84aba67063d2143807",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:68765d262e2128e4ab49c983f3411946",
+        "GUID:02f771204943f4a40949438e873e3eff",
+        "GUID:84651a3751eca9349aac36a66bba901b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
