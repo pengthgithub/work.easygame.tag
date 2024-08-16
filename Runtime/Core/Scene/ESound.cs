@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Task = System.Threading.Tasks.Task;
@@ -7,16 +6,34 @@ namespace Easy
 {
     public class ESound : MonoBehaviour
     {
-        public static ESound Instance { get; private set; }
-
         [SerializeField] [Range(0, 1)] [Rename("背景音量")]
         private float bgmVolume = 1;
 
         [SerializeField] [Range(0, 1)] [Rename("音效音量")]
         private float soundVolume = 1;
 
-        [SerializeField] [Rename("静音")] private bool mute = false;
-        [SerializeField] List<AudioSource> audioSources;
+        [SerializeField] [Rename("静音")] private bool mute;
+        [SerializeField] private List<AudioSource> audioSources;
+
+        public bool uiMute;
+
+        private readonly string _AudioUrl = "AudioSource";
+
+        /// <summary>
+        ///     声音map，默认表示同一个声音只能播放一次
+        /// </summary>
+        private Dictionary<string, AudioSource> audioMap;
+
+        private AudioSource bgmSource;
+
+        private int soundCount;
+
+        /// <summary>
+        ///     声音缓存池
+        /// </summary>
+        private EPool<AudioSource> soundPool;
+
+        public static ESound Instance { get; private set; }
 
         public float BGMVolume
         {
@@ -41,35 +58,17 @@ namespace Easy
             {
                 mute = value;
                 if (value == false)
-                {
                     bgmSource.Stop();
-                }
                 else
-                {
                     bgmSource.Play();
-                }
             }
         }
-
-        public bool uiMute;
 
         private void Awake()
         {
             Instance = this;
             Init();
         }
-
-        /// <summary>
-        /// 声音缓存池
-        /// </summary>
-        private EPool<AudioSource> soundPool;
-
-        /// <summary>
-        /// 声音map，默认表示同一个声音只能播放一次
-        /// </summary>
-        private Dictionary<string, AudioSource> audioMap;
-
-        private AudioSource bgmSource;
 
         public void Init()
         {
@@ -78,18 +77,16 @@ namespace Easy
             audioMap = new Dictionary<string, AudioSource>();
         }
 
-        private readonly string _AudioUrl = "AudioSource";
-
         private AudioSource GetSource()
         {
             return soundPool.Get(_AudioUrl, () =>
             {
-                GameObject audioGO = new GameObject("audio");
+                var audioGO = new GameObject("audio");
                 audioGO.transform.SetParent(transform, false);
                 var audioSource = audioGO.AddComponent<AudioSource>();
                 audioSource.playOnAwake = false;
                 return audioSource;
-            }, GameObject.Destroy);
+            }, Destroy);
         }
 
         private void ReleaseSource(AudioSource source)
@@ -103,14 +100,14 @@ namespace Easy
         }
 
         /// <summary>
-        /// 播放背景音
+        ///     播放背景音
         /// </summary>
         /// <param name="url"></param>
         /// <param name="loop"></param>
         public async Task PlayBGM(string url, bool loop)
         {
             if (mute || bgmVolume == 0) return;
-            AudioClip clip = await ELoader.LoadAsset<AudioClip>(url);
+            var clip = await ELoader.LoadAsset<AudioClip>(url);
             bgmSource.clip = clip;
             bgmSource.loop = loop;
             bgmSource.volume = bgmVolume;
@@ -118,14 +115,14 @@ namespace Easy
         }
 
         /// <summary>
-        /// 播放音效
+        ///     播放音效
         /// </summary>
         /// <param name="url"></param>
         public async Task PlaySound(string url)
         {
             if (uiMute || mute || soundVolume == 0) return;
 
-            AudioClip clip = await ELoader.LoadAsset<AudioClip>(url);
+            var clip = await ELoader.LoadAsset<AudioClip>(url);
             if (clip)
             {
                 var source = GetSource();
@@ -141,9 +138,8 @@ namespace Easy
             }
         }
 
-        private int soundCount = 0;
         /// <summary>
-        /// 播放音效
+        ///     播放音效
         /// </summary>
         /// <param name="clip"></param>
         public AudioSource PlaySound(AudioClip clip, float _volume, bool loop)
@@ -172,11 +168,8 @@ namespace Easy
         {
             if (audioMap != null)
             {
-                audioMap.TryGetValue(url, out AudioSource source);
-                if (source)
-                {
-                    source.Stop();
-                }
+                audioMap.TryGetValue(url, out var source);
+                if (source) source.Stop();
             }
         }
     }

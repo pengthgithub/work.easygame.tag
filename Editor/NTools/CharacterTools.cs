@@ -685,7 +685,7 @@ namespace Easy
             // skin 文件修改
             if (assetPath.Contains("_skin."))
             {
-                modelImporter.isReadable = true;
+                //modelImporter.isReadable = true;
             }
 
             // int k = assetPath.LastIndexOf("@");
