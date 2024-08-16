@@ -2,13 +2,11 @@
     "name": "Easy",
     "rootNamespace": "",
     "references": [
-        "GUID:ee6baafdecd94804a8714654c4bd097f",
         "GUID:9e24947de15b9834991c9d8411ea37cf",
         "GUID:69448af7b92c7f342b298e06a37122aa",
         "GUID:84651a3751eca9349aac36a66bba901b",
         "GUID:cd58129ed96f0f84aba67063d2143807",
         "GUID:15fc0a57446b3144c949da3e2b9737a9",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:df380645f10b7bc4b97d4f5eb6303d95"
     ],
     "includePlatforms": [],
