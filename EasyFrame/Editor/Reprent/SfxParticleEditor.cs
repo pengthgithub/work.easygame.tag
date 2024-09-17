@@ -2,7 +2,6 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Easy
 {
@@ -11,37 +10,40 @@ namespace Easy
     {
         private int tabID = 0;
         private string[] tableNames;
-        
+
         private SfxParticle sfxParticle;
-        
+
         private SerializedProperty lifeTimePro;
         private SerializedProperty speedPro;
         private SerializedProperty deathSfxPro;
-        
+
         private SerializedProperty prefabPro;
         private SerializedProperty ownerPro;
         private SerializedProperty cameraPro;
         private SerializedProperty soundPro;
-        
+        private bool hasEnable = false;
+
         void OnEnable()
         {
+            hasEnable = true;
             Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Easy/Icon/tag_icon.png");
             EditorGUIUtility.SetIconForObject(target, icon);
-            
+
             sfxParticle = target as SfxParticle;
             ReadProperty();
             Read();
-            
-            tableNames = new string[] {"粒子","拥有者","镜头","声音"};
+
+            tableNames = new string[] { "粒子", "拥有者", "镜头", "声音" };
             tableNames[0] = "粒子 " + prefabPro.arraySize;
             tableNames[1] = "拥有者 " + ownerPro.arraySize;
             tableNames[2] = "镜头 " + cameraPro.arraySize;
             tableNames[3] = "声音 " + soundPro.arraySize;
         }
-        
+
         void OnDisable()
         {
-            Save();
+            if (hasEnable) Save();
+            hasEnable = false;
         }
 
         void ReadProperty()
@@ -51,47 +53,35 @@ namespace Easy
             deathSfxPro = serializedObject.FindProperty("deathSfx");
             prefabPro = serializedObject.FindProperty("sfxPrefab");
             ownerPro = serializedObject.FindProperty("sfxOwner");
-            cameraPro = serializedObject.FindProperty("sfxShark");    
+            cameraPro = serializedObject.FindProperty("sfxShark");
             soundPro = serializedObject.FindProperty("sfxSound");
-           
         }
-        
+
         //=====================================================================
         // 存取读取数据
         //=====================================================================
+
         #region 存取读取数据
-        public int moveSpeed = 0;
-        private string previewText = "p_h_001";
         private string previewAni = "run";
-        private string enemyPreviewText = "p_h_001";
-        private int aniIndex = 0;
         private string[] arrayNames;
         private float speed = 1;
         private static string lastPreviewText;
-        private static string defaultScene;
-        private static Vector3 castPos;
 
         private void Save()
         {
-            EditorPrefs.SetInt(sfxParticle.name+"aniIndex",aniIndex);
-            EditorPrefs.SetInt(sfxParticle.name+"moveSpeed",moveSpeed);
-            EditorPrefs.SetString("enemyPreviewText",enemyPreviewText);
-            EditorPrefs.SetString(sfxParticle.name,previewText);
-            EditorPrefs.SetString("defaultScene",defaultScene);
-            EditorPrefs.SetFloat("cpx",castPos.x);
-            EditorPrefs.SetFloat("cpz",castPos.z);
         }
 
         private void Read()
         {
-            previewText = PlayerPrefs.GetString(sfxParticle.name,"p_h_006");
-            enemyPreviewText = PlayerPrefs.GetString("enemyPreviewText","p_h_001");
-            defaultScene = PlayerPrefs.GetString("defaultScene","xingqiu2");
-            var x = EditorPrefs.GetFloat("cpx", 10);
-            var z = EditorPrefs.GetFloat("cpz", 15);
-            castPos.Set(x, 0, z);
-            moveSpeed = EditorPrefs.GetInt(sfxParticle.name+"moveSpeed", 0);
-            aniIndex = EditorPrefs.GetInt(sfxParticle.name+"aniIndex",0);
+            if (string.IsNullOrEmpty(sfxParticle.enemy)) sfxParticle.enemy = "p_h_001";
+            if (string.IsNullOrEmpty(sfxParticle.preview)) sfxParticle.preview = "p_h_001";
+            
+            if (string.IsNullOrEmpty(sfxParticle.defaultScene)) sfxParticle.defaultScene = "xingqiu2";
+            
+            if (sfxParticle.pos.x == 0 && sfxParticle.pos.z == 0)
+            {
+                sfxParticle.pos = new Vector3(14, 0, 14);
+            }
         }
         #endregion
 
@@ -99,7 +89,7 @@ namespace Easy
         {
             EditorGUILayout.LabelField("");
             DrawEditor();
-            
+
             serializedObject.Update();
             GUILayout.BeginVertical("box");
             EditorGUILayout.PropertyField(lifeTimePro);
@@ -115,41 +105,46 @@ namespace Easy
                 case 0:
                 {
                     DrawLizi();
-                    EditorGUILayout.PropertyField(prefabPro,true); 
-                }break;
-                case 1:            {
-                    EditorGUILayout.PropertyField(ownerPro,true); 
-                }break;
-                case 2:           {
-                    
-                    EditorGUILayout.PropertyField(cameraPro,true); 
-                }break;
-                case 3:            {
-                    
-                    EditorGUILayout.PropertyField(soundPro,true); 
-                }break;
+                    EditorGUILayout.PropertyField(prefabPro, true);
+                }
+                    break;
+                case 1:
+                {
+                    EditorGUILayout.PropertyField(ownerPro, true);
+                }
+                    break;
+                case 2:
+                {
+                    EditorGUILayout.PropertyField(cameraPro, true);
+                }
+                    break;
+                case 3:
+                {
+                    EditorGUILayout.PropertyField(soundPro, true);
+                }
+                    break;
             }
 
             serializedObject.ApplyModifiedProperties();
             GUILayout.EndVertical();
-           
         }
+
         private void DrawLizi()
         {
-            
         }
+
         private void DrawEditor()
         {
             // 绘制一个黑色的背景框
             GUILayout.BeginVertical("box");
             if (Application.isPlaying == false)
             {
-                enemyPreviewText = EditorGUILayout.TextField("敌人",enemyPreviewText);
+                sfxParticle.enemy = EditorGUILayout.TextField("敌人", sfxParticle.enemy);
             }
-            
+
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("预览:",GUILayout.Width(60));
-            previewText = EditorGUILayout.TextField(previewText);
+            EditorGUILayout.LabelField("预览:", GUILayout.Width(60));
+            sfxParticle.preview = EditorGUILayout.TextField(sfxParticle.preview);
             if (caster && caster._0Control)
             {
                 var ani = caster._0Control.allAni;
@@ -162,30 +157,32 @@ namespace Easy
                 {
                     arrayNames[i] = ani[i].name;
                 }
-                
-                aniIndex = EditorGUILayout.Popup(aniIndex, arrayNames);
-                if (aniIndex < arrayNames.Length)
+
+                sfxParticle.aniIndex = EditorGUILayout.Popup(sfxParticle.aniIndex, arrayNames);
+                if (sfxParticle.aniIndex < arrayNames.Length)
                 {
-                    previewAni = arrayNames[aniIndex];
+                    previewAni = arrayNames[sfxParticle.aniIndex];
                 }
             }
+
             EditorGUILayout.EndHorizontal();
-            
-            moveSpeed = EditorGUILayout.IntSlider("移动速度", moveSpeed, 0, 128);
+
+            sfxParticle.moveSpeed = EditorGUILayout.IntSlider("移动速度", sfxParticle.moveSpeed, 0, 128);
             if (Application.isPlaying == false)
             {
-                defaultScene = EditorGUILayout.TextField("默认场景:",defaultScene);
+                sfxParticle.defaultScene = EditorGUILayout.TextField("默认场景:", sfxParticle.defaultScene);
             }
             else
             {
-                castPos = EditorGUILayout.Vector3Field("位置:", castPos);
+                sfxParticle.pos = EditorGUILayout.Vector3Field("位置:", sfxParticle.pos);
             }
-            
+
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("计算时间"))
             {
                 CalLifeTime();
             }
+
             if (GUILayout.Button("预览", GUILayout.Width(60), GUILayout.Height(40)))
             {
                 EnterPlaymode();
@@ -196,7 +193,7 @@ namespace Easy
                 }
             }
 
-            if (GUILayout.Button("停止",GUILayout.Width(60), GUILayout.Height(40)))
+            if (GUILayout.Button("停止", GUILayout.Width(60), GUILayout.Height(40)))
             {
                 if (sfx)
                 {
@@ -207,6 +204,12 @@ namespace Easy
                 }
             }
 
+            if (GUILayout.Button("保存", GUILayout.Width(60), GUILayout.Height(40)))
+            {
+                EditorUtility.SetDirty(sfxParticle);
+                AssetDatabase.SaveAssets();
+            }
+
             EditorGUILayout.EndHorizontal();
 
             EditorGUI.BeginChangeCheck();
@@ -215,21 +218,22 @@ namespace Easy
             {
                 if (caster) caster.Speed = speed;
             }
-            
+
             GUILayout.EndVertical();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
         }
+
         private void CalLifeTime()
         {
-             foreach (var owner in sfxParticle.sfxOwner)
+            foreach (var owner in sfxParticle.sfxOwner)
             {
                 if (owner.animationClip != null)
                 {
                     owner.clipName = owner.animationClip.name;
                 }
             }
-             
+
             float maxLifeTime = 0;
             //特效的生命周期计算为：Duration + StartDelay + MaxLifeTime
             foreach (SfxPrefab sfx in sfxParticle.sfxPrefab)
@@ -245,6 +249,7 @@ namespace Easy
                     }
                 }
             }
+
             foreach (SfxSound sfx in sfxParticle.sfxSound)
             {
                 if (sfx.randomClips != null && sfx.randomClips.Count != 0)
@@ -266,7 +271,7 @@ namespace Easy
                     owner.lifeTime = owner.animationClip.length;
                     owner.clipName = owner.animationClip.name;
                 }
-                
+
                 if (maxLifeTime < owner.lifeTime + owner.bindTime)
                 {
                     maxLifeTime = owner.lifeTime + owner.bindTime;
@@ -297,42 +302,45 @@ namespace Easy
         }
 
         #region Editor
-        
+
         private void EnterPlaymode()
         {
             if (Application.isPlaying == false)
             {
                 var name = EditorSceneManager.GetActiveScene().name;
-                if (name != defaultScene)
+                if (name != sfxParticle.defaultScene)
                 {
-                    EditorSceneManager.OpenScene($"Assets/Art/Scene/{defaultScene}.unity");
+                    EditorSceneManager.OpenScene($"Assets/Art/Scene/{sfxParticle.defaultScene}.unity");
                 }
-            
+
                 EditorApplication.EnterPlaymode();
                 return;
             }
         }
+
         private static Represent caster;
         private static Represent enemy;
         internal static Represent sfx;
+
         private void CreateCastAndEnemy()
         {
-            if (lastPreviewText != previewText && caster)
+            if (lastPreviewText != sfxParticle.preview && caster)
             {
                 caster.Dispose();
                 caster = null;
             }
-            if (caster == null && previewText != "")
+
+            if (caster == null && sfxParticle.preview != "")
             {
-                lastPreviewText = previewText;
-                caster = Represent.Create(previewText);
-                caster.Position = castPos;
+                lastPreviewText = sfxParticle.preview;
+                caster = Represent.Create(sfxParticle.preview);
+                caster.Position = sfxParticle.pos;
             }
-            
+
             if (enemy == null)
             {
-                enemy = Represent.Create(previewText);
-                var pos = castPos + new Vector3(0, 0, 2);
+                enemy = Represent.Create(sfxParticle.preview);
+                var pos = sfxParticle.pos + new Vector3(0, 0, 2);
                 enemy.Position = pos;
             }
 
@@ -343,9 +351,10 @@ namespace Easy
                 //sfx.Dispose();
                 sfx = null;
             }
+
             if (sfx == null)
             {
-                sfx = Represent.Create(sfxParticle.name,caster);
+                sfx = Represent.Create(sfxParticle.name, caster);
                 sfx.Scale = 4;
                 sfx.Target = enemy;
                 if (caster)
@@ -354,15 +363,16 @@ namespace Easy
                 }
                 else
                 {
-                    sfx.Position = castPos;
+                    sfx.Position = sfxParticle.pos;
                 }
 
-                if (moveSpeed != 0)
+                if (sfxParticle.moveSpeed != 0)
                 {
-                    sfx.MoveBullet(moveSpeed, enemy.transform);
+                    sfx.MoveBullet(sfxParticle.moveSpeed, enemy.transform);
                 }
             }
         }
+
         #endregion
     }
 }

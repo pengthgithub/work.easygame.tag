@@ -8,6 +8,15 @@ namespace Easy
     [CreateAssetMenu(menuName = "特效标签", fileName = "sfx_特效名字", order = 0)]
     public class SfxParticle : ScriptableObject
     {
+        #if UNITY_EDITOR
+        [SerializeField] [HideInInspector] public int aniIndex;
+        [SerializeField] [HideInInspector] public int moveSpeed;
+        [SerializeField] [HideInInspector] public string enemy;
+        [SerializeField] [HideInInspector] public string preview;
+        [SerializeField] [HideInInspector] public string defaultScene;
+        [SerializeField] [HideInInspector] public Vector3 pos;
+        #endif
+        
         [SerializeField] [Rename("生命周期，0为永久")] [Range(0, 20)]
         public float lifeTime;
         [SerializeField] [Rename("播放速率")] [Range(0, 4)]
@@ -459,13 +468,16 @@ namespace Easy
             {
                 int index = Random.Range(0, randomClips.Count);
                 AudioClip clip = randomClips[index];
-                _index = SoundMgr.Instance.PlaySound(clip, volume, loop);
+                if (SoundMgr.Instance)
+                {
+                    _index = SoundMgr.Instance.PlaySound(clip, volume, loop);
+                }
             }
         }
         internal override void Dispose()
         {
             base.Dispose();
-            SoundMgr.Instance.ReleaseSound(_index);
+            if(SoundMgr.Instance) SoundMgr.Instance.ReleaseSound(_index);
             _index = 0;
         }
         #endregion

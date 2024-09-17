@@ -47,7 +47,7 @@ namespace Easy
             var result = _sceneHandle.Scene.IsValid();
             if (result)
             {
-   
+               Represent.PoolInit(200);
             }
             return result;
         }
@@ -63,7 +63,7 @@ namespace Easy
             }
             
             // 清除掉所有的缓存
-            
+            Represent.PoolDispose();
         }
     }
 }
