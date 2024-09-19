@@ -24,7 +24,7 @@ namespace Easy
         /// <summary>
         /// 动画组件
         /// </summary>
-        [SerializeField] private Animation animation;
+        [SerializeField] private Animation nodeAnimation;
         [SerializeField] private List<string> nodeAniList = new List<string>();
         
         /// <summary>
@@ -41,6 +41,25 @@ namespace Easy
         [SerializeField] private List<string> skinList = new List<string>();
         [SerializeField] public List<ClipData> allAni = new List<ClipData>();
         
+               
+        /// <summary>
+        /// 中心点旋转
+        /// </summary>
+        /// <param name="value"></param>
+        public float CenterAngle
+        {
+            get=> center ? center.localEulerAngles.x : 0;
+            set { 
+                if (center)
+                {
+                    var rangle =  center.localEulerAngles;
+                    rangle.x = value;
+                    center.localEulerAngles = rangle;
+                }
+            }
+
+        }
+        
         //==============================================================================
         // 回调处理，这个方式可能需要在改
         //==============================================================================
@@ -56,14 +75,14 @@ namespace Easy
             Debug.Log($"离线获取动画数据失败，优化无效 {gameObject.name}");
 #endif
             allAni.Clear();
-            if (!animation)
+            if (!nodeAnimation)
             {
-                animation = gameObject.GetComponentInChildren<Animation>();
+                nodeAnimation = gameObject.GetComponent<Animation>();
             }
-            if (animation)
+            if (nodeAnimation)
             {
                 nodeAniList.Clear();
-                foreach (AnimationState anim in animation)
+                foreach (AnimationState anim in nodeAnimation)
                 {
                     var clip = anim.clip;
                     if (clip)
@@ -73,7 +92,7 @@ namespace Easy
                     }
                 }
 
-                animation.playAutomatically = false;
+                nodeAnimation.playAutomatically = false;
             }
       
             if (!animator)
@@ -120,7 +139,7 @@ namespace Easy
 
         internal void PlayClip(string clipName, AnimationClip clip = null)
         {
-            if (!animation) return;
+            if (!nodeAnimation) return;
             if (clip != null)
             {
                 float len = -1;
@@ -135,16 +154,16 @@ namespace Easy
                
                 if (len == -1)
                 {
-                    var _clip = animation.GetClip(clipName);
+                    var _clip = nodeAnimation.GetClip(clipName);
                     if (!_clip)
                     {
-                        animation.AddClip(clip, clipName);
+                        nodeAnimation.AddClip(clip, clipName);
                         nodeAniList.Add(clipName);
                         allAni.Add(new ClipData() { name = clipName, length = clip.length });
                     }
                 }
             }
-            animation.Play(clipName);
+            nodeAnimation.Play(clipName);
         }
 
         internal void PlayAnimator(string clipName, float useTime)

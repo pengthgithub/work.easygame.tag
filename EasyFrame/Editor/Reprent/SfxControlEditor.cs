@@ -11,9 +11,6 @@ namespace Easy
         private SfxControl _sfxControl;
         private void OnEnable()
         {
-            Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Easy/Icon/sfx_icon.png");
-            EditorGUIUtility.SetIconForObject(target, icon);
-            
             _sfxControl = target as SfxControl;
             _sfxControl.CalSize();
         }
@@ -28,14 +25,14 @@ namespace Easy
             base.OnInspectorGUI();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("粒子数加倍"))
-            {
-                _sfxControl.Add();
-            }
-            if (GUILayout.Button("粒子数减半"))
-            {
-                _sfxControl.Sub(); 
-            }
+            // if (GUILayout.Button("粒子数加倍"))
+            // {
+            //     _sfxControl.Add();
+            // }
+            // if (GUILayout.Button("粒子数减半"))
+            // {
+            //     _sfxControl.Sub(); 
+            // }
             EditorGUILayout.EndHorizontal();
 
             if (GUILayout.Button("播放"))

@@ -21,7 +21,7 @@ namespace Easy
             {
                 materials = new List<Material>();
             }
-            if (renders == null || renders.Length != 0) return;
+            if (renders == null || renders.Length == 0) return;
             foreach (var render in renders)
             {
                 foreach (var mat in render.materials)
@@ -226,6 +226,11 @@ namespace Easy
                     _lastShadowOffset = shadowOffset;
                 }
             }
+        }
+
+        internal void ResetMaterial()
+        {
+            
         }
     }
 }

@@ -8,18 +8,24 @@ namespace Easy
 {
     [Serializable] public enum LocatorType
     {
-        none,       //无
-        origin,     //脚底
-        body,       //身体
-        top,        //头顶
-        bullet01,     //子弹
-        bullet02     //子弹
+        none,         // 无
+        origin,       // 脚底
+        body,         // 身体
+        top,          // 头顶
+        bullet01,     // 子弹
+        bullet02,     // 子弹
+        bip_l_hand,   // 左手武器
+        bip_r_hand,    // 右手武器
+        bip_bullet,
+        bip_bullet01
     }
 
     public enum CustomLayer
     {
         Default = 0,
-        UI = 5
+        Character = 3,
+        UI = 5,
+        UICharacter = 6,
     }
 
     public partial class Represent
@@ -31,13 +37,13 @@ namespace Easy
         /// </summary>
         public float CenterAngle
         {
-            get=> transform.eulerAngles.y;
+            get=> _0Control? _0Control.CenterAngle: 0;
             set
             {
-                var ts = transform;
-                var angle = ts.eulerAngles;
-                angle.y = value;
-                ts.eulerAngles = angle;
+                if (_0Control)
+                {
+                    _0Control.CenterAngle = value;
+                }
             }
         }
 
@@ -131,9 +137,6 @@ namespace Easy
             {
                 var _represent = Instantiate(origin as GameObject, gameObject.transform, false);
                 _0Control = _represent.GetComponent<Control>();
-#if UNITY_EDITOR
-                _0Control.hideChild = true;
-#endif
             }
             Show();
             _0LoadEnd = true;

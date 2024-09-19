@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,9 +27,6 @@ namespace Easy
         void OnEnable()
         {
             hasEnable = true;
-            Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Easy/Icon/tag_icon.png");
-            EditorGUIUtility.SetIconForObject(target, icon);
-
             sfxParticle = target as SfxParticle;
             ReadProperty();
             Read();
@@ -310,7 +308,16 @@ namespace Easy
                 var name = EditorSceneManager.GetActiveScene().name;
                 if (name != sfxParticle.defaultScene)
                 {
-                    EditorSceneManager.OpenScene($"Assets/Art/Scene/{sfxParticle.defaultScene}.unity");
+                    var files = Directory.GetFiles("Assets/Art/Scene/", $"{sfxParticle.defaultScene}.unity", SearchOption.AllDirectories);
+                    if (files.Length > 0)
+                    {
+                        EditorSceneManager.OpenScene(files[0]);
+                    }
+                    else
+                    {
+                        Debug.LogError("不存在地图:" + sfxParticle.defaultScene);
+                        return;
+                    }
                 }
 
                 EditorApplication.EnterPlaymode();

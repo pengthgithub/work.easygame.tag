@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Easy
 {
-    [ExecuteAlways] public class SfxControl : MonoBehaviour
+    [Icon("Packages/EasyFrame/Editor/Icon/sfx_icon.png")][ExecuteAlways] public class SfxControl : MonoBehaviour
     {
         [SerializeField] private Animator animator;
         [SerializeField] [Range(0,3)] private float speed = 1.0f;
@@ -169,7 +169,10 @@ namespace Easy
         
         private void OnValidate()
         {
-            transform.GetChild(0).hideFlags = hideChild ? HideFlags.HideInHierarchy : HideFlags.None;
+            if (transform.childCount != 0)
+            {
+                transform.GetChild(0).hideFlags = hideChild ? HideFlags.HideInHierarchy : HideFlags.None;
+            }
             nodeCount = gameObject.GetComponentsInChildren<Transform>().Length;
             
             particleCount = 0;

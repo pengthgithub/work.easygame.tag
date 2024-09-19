@@ -7,7 +7,7 @@ namespace Easy
     /// <summary>
     /// 控制器
     /// </summary>
-    [ExecuteAlways] public partial class Control : MonoBehaviour
+    [Icon("Packages/EasyFrame/Editor/Icon/icon.png")][ExecuteAlways] public partial class Control : MonoBehaviour
     {
         [Header("基础信息")]
         
@@ -82,6 +82,7 @@ namespace Easy
                 }
             }
         }
+ 
         #endregion
 
         private void LateUpdate()

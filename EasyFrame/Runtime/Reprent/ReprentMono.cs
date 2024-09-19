@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Easy
@@ -28,6 +29,7 @@ namespace Easy
         [SerializeField] [Rename("是否删除")] protected bool isDisposed;
         [SerializeField] [Rename("播放速度")] protected float playSpeed;
         [SerializeField] [Rename("播放的动画名")] protected string _animationName;
+        [SerializeField] private List<Vector3> debugList;
         [SerializeField] private Represent _Owner;
         #endregion
         
@@ -54,8 +56,12 @@ namespace Easy
         public Vector3 EulerAngles
         {
             get => transform.eulerAngles;
-            set => transform.eulerAngles = value;   
+            set
+            {
+                transform.eulerAngles = value;
+            }
         }
+
         public Vector3 LocalEulerAngles
         {
             get => transform.localEulerAngles; 
@@ -68,7 +74,7 @@ namespace Easy
             {
                 var _angle = transform.eulerAngles;
                 _angle.y = value;
-                transform.eulerAngles = _angle;
+                LocalEulerAngles = _angle;
             }
         }
         public Vector3 LocalScale

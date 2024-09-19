@@ -98,9 +98,9 @@ namespace Easy
 #region Transform Extension
         public static Transform Reset(this Transform trans)
         {
-            trans.localPosition = new Vector3(0, 0, 0);
-            trans.localEulerAngles = new Vector3(0, 0, 0);
-            trans.localScale = new Vector3(1, 1, 1);
+            // trans.localPosition = new Vector3(0, 0, 0);
+            // trans.localEulerAngles = new Vector3(0, 0, 0);
+            // trans.localScale = new Vector3(1, 1, 1);
             return trans;
         }
 
@@ -133,16 +133,16 @@ namespace Easy
         }
         
         
-        public static void RemoveMissingComponent(this GameObject gameObject)
+        public static void RemoveMissingComponent(this Transform ts)
         {
             #if UNITY_EDITOR
-                        UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(gameObject);
+                        UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(ts.gameObject);
             #endif
-            var tsArray =  gameObject.GetComponentsInChildren<Transform>();
-            foreach (var ts in tsArray)
+            var tsArray =  ts.gameObject.GetComponentsInChildren<Transform>();
+            foreach (var childts in tsArray)
             {
                 #if UNITY_EDITOR
-                UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(ts.gameObject);
+                UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(childts.gameObject);
                 #endif
             }
         }

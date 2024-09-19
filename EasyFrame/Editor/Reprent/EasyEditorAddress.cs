@@ -1,35 +1,16 @@
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEngine;
 
-[Serializable] public enum FileType
-{
-    fullName,
-    simpleName,
-    simpleNameWithExten
-}
+//=================================================================
 
-[Serializable]
-public class AddRessData
-{
-    [SerializeField] public string label;
-    [SerializeField] public string dirPath;
-    [SerializeField] public string filter;
-    [SerializeField] public FileType fileType;
-    [SerializeField] public bool topDir;
-}
-[CreateAssetMenu(menuName = "Create AddressConfig", fileName = "AddressConfig", order = 0)]
-public class AddressConfig : ScriptableObject
-{
-    [SerializeField] public List<AddRessData> configs;
-}
-
+/// <summary>
+/// 
+/// </summary>
 public partial class EasyEditorAddress
 {
     /// <summary>
@@ -46,7 +27,7 @@ public partial class EasyEditorAddress
         }
         settings.DefaultGroup = defaultGroup;
 
-        var config = AssetDatabase.LoadAssetAtPath<AddressConfig>("Assets/Editor/AddressConfig.asset");
+        var config = AssetDatabase.LoadAssetAtPath<Easy.AddressConfig>("Assets/Editor/AddressConfig.asset");
         if (config)
         {
             foreach (var data in config.configs)
@@ -56,7 +37,7 @@ public partial class EasyEditorAddress
         }
     }
 
-    private static void AddGroupToAddress(string group, string path, string filterName, FileType fileType,
+    private static void AddGroupToAddress(string group, string path, string filterName, Easy.FileType fileType,
         bool top = false)
     {
         if (Directory.Exists(path) == false) return;
@@ -69,15 +50,15 @@ public partial class EasyEditorAddress
             var extension = Path.GetExtension(file);
             if (extension == ".meta") continue;
             var fileName = "";
-            if (fileType == FileType.simpleName)
+            if (fileType == Easy.FileType.simpleName)
             {
                 fileName = Path.GetFileNameWithoutExtension(file);
             }
-            if (fileType == FileType.fullName)
+            if (fileType == Easy.FileType.fullName)
             {
                 fileName = file.Replace("\\", "/");
             }
-            if (fileType == FileType.simpleNameWithExten)
+            if (fileType == Easy.FileType.simpleNameWithExten)
             {
                 fileName = Path.GetFileName(file);
             }

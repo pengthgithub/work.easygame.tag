@@ -25,19 +25,16 @@ namespace Easy
                     return;
                 } 
             
-                sfxItem.self = this;
+                sfxItem.__self = this;
                 var item = GameObject.Instantiate(sfxItem.prefab, Vector3.zero, Quaternion.identity);
                 item.transform.SetParent(transform, false);
                 item.transform.localScale = Vector3.one;
                 item.SetActive(false);
-                sfxItem.display = item.GetComponent<SfxControl>();
-                if (sfxItem.display == null)
+                sfxItem.__display = item.GetComponent<SfxControl>();
+                if (sfxItem.__display == null)
                 {
                     Debug.LogError($"{sfxItem.prefab.name} 预制件上没有挂载SfxControl组件");
                 }
-#if UNITY_EDITOR
-                sfxItem.display.hideChild = true;
-#endif
             }
 
             SetOwner();
@@ -45,7 +42,7 @@ namespace Easy
         }
         private void SetOwner()
         {
-            if(!_0SfxParticle) return;
+            if(!_0SfxParticle || !Owner) return;
             foreach (var sfxItem in _0SfxParticle.sfxOwner)
             {
                 sfxItem.control = Owner._0Control;

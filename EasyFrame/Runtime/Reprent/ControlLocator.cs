@@ -18,7 +18,7 @@ namespace Easy
         /// 离线插槽
         /// </summary>
         [SerializeField] public List<LocatorData> locators;
-
+        
         public void RemoveLocator(LocatorType type)
         {
             if(locators == null || locators.Count == 0) return;
@@ -32,6 +32,7 @@ namespace Easy
                 }
             }
         }
+        
         /// <summary>
         /// 获取插槽
         /// </summary>

@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 namespace Easy
 {
     [CreateAssetMenu(menuName = "特效标签", fileName = "sfx_特效名字", order = 0)]
-    public class SfxParticle : ScriptableObject
+    [Icon("Packages/EasyFrame/Editor/Icon/tag_icon.png")]public class SfxParticle : ScriptableObject
     {
         #if UNITY_EDITOR
         [SerializeField] [HideInInspector] public int aniIndex;
@@ -52,6 +52,11 @@ namespace Easy
             {
                 needUpdate.Add(sfx);
             }
+            
+            foreach (var sfx in needUpdate)
+            {
+                sfx.Init();
+            }
         }
         internal void OnUpdate(float durationTime)
         {
@@ -85,23 +90,51 @@ namespace Easy
         [Rename("生命周期")] [Range(0, 20)] [SerializeField]
         public float lifeTime;
 
-        protected bool bBind = false;
-        protected bool sleep = false;
-        
-        internal virtual void Update(float duuration)
+        private bool bBind = false;
+        private bool sleep = false;
+        protected float duaration = 0;
+
+        internal void Init()
         {
+            bBind = false;
+            sleep = false;
+            duaration = 0;
+        }
+        internal void Update(float duration)
+        {
+            duaration = duration;
+            if(sleep) return;
+            if (duaration > (lifeTime + bindTime) && lifeTime != 0)
+            {
+                Death();
+                return;
+            }
+            
+            if (duration > bindTime && !bBind)
+            {
+                bBind = true;
+                OnBind();
+            }
+            
+            if(!bBind) return;
+            OnUpdate();
         }
 
-        internal virtual void Dispose()
+        internal void Dispose()
         {
-            sleep = false;
+            OnDispose();
+            sleep = true;
             bBind = false;
         }
 
         internal virtual void Death()
         {
-            
+            Dispose();
         }
+
+        protected virtual void OnBind(){ }
+        protected virtual void OnUpdate(){ }
+        protected virtual void OnDispose(){ }
     }
 
     [Serializable]
@@ -129,86 +162,36 @@ namespace Easy
         [Rename("死亡消失时间")] [Range(0, 2)] public float deleteNow;
         [SerializeField] public List<ClipData> clipList;
         #region 逻辑控制
-        internal Represent self;
+        internal Represent __self;
+        internal SfxControl __display;
+        
         private float deathTime = 0;
         private bool isLine = false;
-        internal override void Dispose()
-        {
-            base.Dispose();
-            _locatorTs = null;
-            _targetLocatorTs = null;
-            deathTime = 0;
-            isLine = false;
-        }
-        
-        internal SfxControl display;
-        internal override void Update(float duaration)
-        { 
-            if(sleep) return;
-           if(duaration > bindTime && !bBind) Bind();
-           if (duaration > (lifeTime + bindTime) && lifeTime != 0)
-           {
-               Death();
-               return;
-           }
 
-           if (isLine)
-           {
-               display.FlowTarget(_locatorTs, _targetLocatorTs);
-           }
-           else
-           {
-               UpdateLogic();
-           }
-        }
-        
-        private void Bind()
-        {
-            if(bBind || !display) return;
-            bBind = true;
-            
-            display.gameObject.SetActive(true);
-
-            if (targetlocatorType != LocatorType.none && self.Target)
-            {
-                isLine = true;
-                InitTargetLocator();
-            }
-            InitLocator();
-            //随机动画
-            if (display) 
-            {
-                var count = clipList.Count;
-                if (count != 0)
-                {
-                    int index = Random.Range(0, count);
-                    display.Play(clipList[index].name);
-                }
-            }
-        }
+        #region 绑定
         private Transform _locatorTs;
         private Transform _targetLocatorTs;
         private void InitLocator()
         {
             //3.1 如果有施法主体，则查找主体上的插槽
-            if (self.Owner)
+            if (__self.Owner)
             {
-                _locatorTs = self.Owner.GetLocator(locatorType);
+                _locatorTs = __self.Owner.GetLocator(locatorType);
                 
                 if (!_locatorTs)
                 {
-                    _locatorTs = self.Owner.transform;
+                    _locatorTs = __self.Owner.transform;
                 }
 
-                display.transform.localPosition = _locatorTs.transform.localPosition;
+                __display.transform.localPosition = _locatorTs.transform.localPosition;
                 if (!noRotation)
                 {
-                    self.transform.rotation = _locatorTs.rotation;
+                    __self.transform.rotation = _locatorTs.rotation;
                 }
                 // 永无缩放，表示永远不设置缩放
                 if (!noScale)
                 {
-                    self.transform.localScale = _locatorTs.localScale;
+                    __self.transform.localScale = _locatorTs.localScale;
                 }
             }
         }
@@ -218,51 +201,91 @@ namespace Easy
             // 直接获取插槽位置，获取不到，则使用 目标点的位置
             if (targetlocatorType != LocatorType.none)
             {
-                _targetLocatorTs = self.Target.GetLocator(targetlocatorType);
+                _targetLocatorTs = __self.Target.GetLocator(targetlocatorType);
             }
             if (_targetLocatorTs == null)
             {
-                _targetLocatorTs =  self.Target.transform;
+                _targetLocatorTs =  __self.Target.transform;
             }
         }
+        protected override void OnBind()
+        {
+            if(!__display) return;
+            __display.gameObject.SetActive(true);
+
+            if (targetlocatorType != LocatorType.none && __self.Target)
+            {
+                isLine = true;
+                InitTargetLocator();
+            }
+            InitLocator();
+            
+            //随机动画
+            var count = clipList.Count;
+            if (count != 0)
+            {
+                int index = Random.Range(0, count);
+                __display.Play(clipList[index].name);
+            }
+        }
+        #endregion
+        
         private void UpdateLogic()
         {
             //0、 强制刷新位置，必须是要有插槽
-            if (!display && !_locatorTs) return;
-            display.Speed = self.Speed;
+            if (!__display && !_locatorTs) return;
+            __display.Speed = __self.Speed;
 
             if (!_locatorTs) return;
             //1、如果勾选了本地位置，只会在创建的时候刷新一下位置
             if (!useSfxPosition)
             {
-                display.transform.position = _locatorTs.transform.position;
+                __display.transform.position = _locatorTs.transform.position;
             }
 
             //2、如果勾选了本地旋转，则会在创建的时候刷新一下旋转。后续不在刷新旋转
             // 如果勾选了 无旋转，表示永远用自己的旋转
             // 死亡时创建的标签需要锁定位置
-            if (!useSfxRotation && !noRotation && !self.LockDirection)
+            if (!useSfxRotation && !noRotation && !__self.LockDirection)
             {
-                display.transform.rotation = _locatorTs.transform.rotation;
+                __display.transform.rotation = _locatorTs.transform.rotation;
             }
 
             //3、如果勾选了本地缩放，则会在创建的时候刷新一下缩放。后续不在刷新缩放
             // 如果勾选了 无缩放，表示永远用自己的缩放
             if (!useSfxScale && !noScale)
             {
-                display.transform.localScale = _locatorTs.transform.localScale;
+                __display.transform.localScale = _locatorTs.transform.localScale;
             }
         }
+        protected override void OnUpdate()
+        { 
+            if (isLine)
+            {
+                __display.FlowTarget(_locatorTs, _targetLocatorTs);
+            }
+            else
+            {
+                UpdateLogic();
+            }
+        }
+        
+        protected override void OnDispose()
+        {
+            _locatorTs = null;
+            _targetLocatorTs = null;
+            deathTime = 0;
+            isLine = false;
+        }
 
-        internal override void Death()
+        protected virtual void OnDeath()
         {
             var count = clipList.Count;
-            deathTime += Time.deltaTime * self.Speed;
+            deathTime += Time.deltaTime * __self.Speed;
             if (deathTime > deleteNow)
             {
-                display.gameObject.SetActive(false);
-                display.Dispose();
-                sleep = true;
+                __display.gameObject.SetActive(false);
+                __display.Dispose();
                 Dispose();
                 return;
             }
@@ -270,7 +293,7 @@ namespace Easy
             if(count == 0) return;
             var index = Random.Range(0, count);
             var data = clipList[index];
-            display.Play(data.name);
+            __display.Play(data.name);
             deleteNow = data.length;
         }
         #endregion
@@ -281,7 +304,7 @@ namespace Easy
     {
         [Rename("隐藏")] public bool hide;
 
-        [Header("动画")] [SerializeField] [Rename("节点动画路径")] [DropdownAsset("Assets/Art/character/common/ani")]
+        [Header("动画")] [SerializeField] [Rename("节点动画路径")] [DropdownAsset("Assets/Art/Character/common/ani")]
         public AnimationClip animationClip;
 
         [SerializeField] public string clipName;
@@ -322,17 +345,15 @@ namespace Easy
         
         #region 逻辑控制
         internal Control control;
-        internal override void Update(float duaration)
-        { 
-            if(sleep) return;
-            if(duaration > bindTime && !bBind) Bind();
-            if (duaration > (lifeTime +bindTime) && lifeTime != 0)
-            {
-                Dispose();
-            }
-        }
-        private void Bind()
+
+        protected override void OnUpdate()
         {
+            if(enableAlpha && enableOutLine && rimEnable && enableMaskTexture) return;
+            UpdateLogic(duaration);
+        }
+        protected override void OnBind()
+        {
+            if(!control) return;
             if (!string.IsNullOrEmpty(clipName) && animationClip)
             {
                 control.PlayClip(clipName, animationClip);
@@ -345,6 +366,7 @@ namespace Easy
 
         private void UpdateLogic(float updatedTime)
         {
+            if(!control) return;
             if(!enableAlpha && !enableOutLine&& !rimEnable && !enableMaskTexture) return;
             
             if (rimEnable)
@@ -389,10 +411,10 @@ namespace Easy
             control.ModifyParam( enableAlpha, enableOutLine, rimEnable, enableMaskTexture);
         }
 
-        internal override void Dispose()
+        protected override void OnDispose()
         {
-            base.Dispose();
-            control.Dispose();
+            if(control) control.ResetMaterial();
+            control = null;
         }
 
         #endregion
@@ -406,17 +428,7 @@ namespace Easy
         
         #region 逻辑控制
         internal Control control;
-        internal override void Update(float duaration)
-        { 
-            if(sleep) return;
-            if(duaration > bindTime && !bBind) Bind();
-            if (duaration > (lifeTime +bindTime) && lifeTime != 0)
-            {
-                Dispose();
-            }
-        }
-
-        private void Bind()
+        protected override void OnBind()
         {
             if(!animationClip) return;
             
@@ -425,14 +437,14 @@ namespace Easy
                 CameraMgr.Instance.Play(animationClip);
             }
         }
-        internal override void Dispose()
+        protected override void OnDispose()
         {
-            base.Dispose();
-            
             if (CameraMgr.Instance)
             {
                 CameraMgr.Instance.Stop();
             }
+
+            control = null;
         }
         #endregion
     }
@@ -448,20 +460,8 @@ namespace Easy
         [SerializeField] [HideInInspector] public List<string> randomClipNames;
         
         #region 逻辑控制
-        
         private int _index;
-        
-        internal override void Update(float duaration)
-        { 
-            if(sleep) return;
-            if(duaration > bindTime && !bBind) Bind();
-            if (duaration > (lifeTime +bindTime) && lifeTime != 0)
-            {
-                Dispose();
-            }
-        }
-
-        private void Bind()
+        protected override void OnBind()
         {
             var count = randomClips.Count;
             if (count != 0)
@@ -474,9 +474,8 @@ namespace Easy
                 }
             }
         }
-        internal override void Dispose()
+        protected override void OnDispose()
         {
-            base.Dispose();
             if(SoundMgr.Instance) SoundMgr.Instance.ReleaseSound(_index);
             _index = 0;
         }

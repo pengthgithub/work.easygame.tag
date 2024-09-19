@@ -85,9 +85,6 @@ namespace Easy
         private int clomCount = 4;
         private void OnEnable()
         {
-            // 设置自定义图标
-            Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Easy/Icon/icon.png");
-            EditorGUIUtility.SetIconForObject(target, icon);
             control = target as Control;
             Init();
         }
@@ -143,6 +140,11 @@ namespace Easy
                         {
                             DrawPlay();
                         }
+
+                        if (tabName == "插槽")
+                        {
+                            DrawLocatorBtn();
+                        }
                     }  
                 }
                 serializedObject.ApplyModifiedProperties(); // 应用修
@@ -191,6 +193,63 @@ namespace Easy
                 control.Stop();
             }
             EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawLocatorBtn()
+        {
+            EditorGUILayout.Space();
+            if (GUILayout.Button("刷新插槽", GUILayout.Width(80),GUILayout.Height(30)))
+            {
+                for (int i = 0; i < control.locators.Count; i++)
+                {
+                    var ld = control.locators[i];
+                    if(i == 0) ld.Type = LocatorType.origin;
+                    if(i == 1) ld.Type = LocatorType.body;
+                    if(i == 2) ld.Type = LocatorType.top;
+                    if(i == 3) ld.Type = LocatorType.bip_l_hand;
+                    if(i == 4) ld.Type = LocatorType.bip_r_hand;
+                    if(i == 5) ld.Type = LocatorType.bip_bullet;
+                    if(i == 6) ld.Type = LocatorType.bip_bullet01;
+                    control.locators[i] = ld;
+                }
+                
+                for (int i = control.locators.Count - 1; i >=0; i--)
+                {
+                    var ld = control.locators[i];
+                    if (ld.Type == LocatorType.origin)
+                    {
+                        ld.Locator = control.transform.FindChildByName("origin");
+                    }
+                    if (ld.Type == LocatorType.body)
+                    {
+                        ld.Locator = control.transform.FindChildByName("body");
+                    }
+                    if (ld.Type == LocatorType.top)
+                    {
+                        ld.Locator = control.transform.FindChildByName("top");
+                    }
+                    if (ld.Type == LocatorType.bip_l_hand)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bip_l_hand");
+                    }
+                    if (ld.Type == LocatorType.bip_r_hand)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bip_r_hand");
+                    }
+                    if (ld.Type == LocatorType.bip_bullet)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bip_bullet");
+                    }
+                    if (ld.Type == LocatorType.bip_bullet01)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bip_bullet01");
+                    }
+                    control.locators[i] = ld;
+                }
+                
+                EditorUtility.SetDirty(control);
+                AssetDatabase.SaveAssets();
+            }
         }
     }
 }

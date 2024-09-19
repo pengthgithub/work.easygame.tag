@@ -31,6 +31,25 @@ namespace Easy
             }
         }
         
+        [MenuItem("Tools/移除Miss脚本")]
+        public static void RemoveMissScript()
+        {
+            GameObject[] gameObject = Selection.gameObjects;
+            if (gameObject == null) return;
+
+            foreach (var go in gameObject)
+            {
+                go.transform.RemoveMissingComponent();
+            }
+        }
+        
+        
+        
+        
+        
+        
+        
+        
         static EasyEditor()
         {
             checkRes = EditorPrefs.GetBool("CheckRes");
