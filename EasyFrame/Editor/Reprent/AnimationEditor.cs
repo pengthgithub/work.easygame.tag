@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.IO;
 using Easy;
@@ -17,10 +16,11 @@ public class AnimationPlay : UnityEditor.Editor
     private void OnEnable()
     {
         var ani = target as Animation;
-
+        
         if (Application.isPlaying == false)
         {
-            if (ani && ani.name.Contains("np_"))
+            ani.playAutomatically = false;
+            if (ani && ani.name.Contains("p_"))
             {
                 var anis = ani.GetComponentsInChildren<Animation>();
                 for (int i = anis.Length -1; i >=0; i--)
@@ -83,4 +83,3 @@ public class AnimationPlay : UnityEditor.Editor
         }
     }
 }
-#endif // UNITY_EDITOR

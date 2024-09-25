@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -7,7 +6,7 @@ using UnityEngine;
 namespace Easy
 {
    [CustomEditor(typeof(Control))]
-    public class ControlEditor:Editor
+    public class ControlEditor:UnityEditor.Editor
     {
         private string lastHeader = "";
         private string hasHeadAttribute(SerializedProperty iterator)
@@ -253,4 +252,3 @@ namespace Easy
         }
     }
 }
-#endif

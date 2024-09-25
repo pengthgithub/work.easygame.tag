@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -7,8 +6,8 @@ using UnityEngine;
 namespace Easy
 {
     [CustomEditor(typeof(SfxParticle))]
-    public class SfxParticleEditor : Editor
-    {
+    public class SfxParticleEditor : UnityEditor.Editor
+    { 
         private int tabID = 0;
         private string[] tableNames;
 
@@ -64,7 +63,7 @@ namespace Easy
         private string[] arrayNames;
         private float speed = 1;
         private static string lastPreviewText;
-
+        private bool recyleModle = false;
         private void Save()
         {
         }
@@ -176,11 +175,15 @@ namespace Easy
             }
 
             EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.BeginVertical();
             if (GUILayout.Button("计算时间"))
             {
                 CalLifeTime();
             }
 
+            recyleModle = GUILayout.Toggle(recyleModle, "回收");
+            EditorGUILayout.EndVertical();
             if (GUILayout.Button("预览", GUILayout.Width(60), GUILayout.Height(40)))
             {
                 EnterPlaymode();
@@ -353,16 +356,21 @@ namespace Easy
 
             if (sfx)
             {
-                Represent.Remove(sfx);
-                GameObject.DestroyImmediate(sfx.gameObject);
-                //sfx.Dispose();
-                sfx = null;
+                if (recyleModle)
+                {
+                    sfx.Dispose();
+                    sfx = null;
+                }
+                else
+                {
+                    Represent.Remove(sfx);
+                    GameObject.DestroyImmediate(sfx.gameObject);
+                }
             }
 
             if (sfx == null)
             {
                 sfx = Represent.Create(sfxParticle.name, caster);
-                sfx.Scale = 4;
                 sfx.Target = enemy;
                 if (caster)
                 {
@@ -383,4 +391,3 @@ namespace Easy
         #endregion
     }
 }
-#endif

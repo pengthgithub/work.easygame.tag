@@ -36,10 +36,14 @@ namespace Easy
                     Debug.LogError($"{sfxItem.prefab.name} 预制件上没有挂载SfxControl组件");
                 }
             }
-
-            SetOwner();
-            sfx.Init();
         }
+
+        public void ResetTag()
+        {
+            SetOwner();
+            if(_0SfxParticle) _0SfxParticle.Init();
+        }
+
         private void SetOwner()
         {
             if(!_0SfxParticle || !Owner) return;
@@ -53,7 +57,8 @@ namespace Easy
             if(isDisposed || !_0LoadEnd || !_0SfxParticle) return;
             
             _durationTime += Time.deltaTime * Speed;
-            if (_0SfxParticle.lifeTime != 0 && _durationTime > _0SfxParticle.lifeTime)
+            //此处+0.1f 是 避免由于精度原因导致最后一帧的数据没有执行。
+            if (_0SfxParticle.lifeTime != 0 && _durationTime > (_0SfxParticle.lifeTime + 0.1f))
             {
                 Dispose();
                 return;
@@ -105,7 +110,7 @@ namespace Easy
         }
         internal void UpdateMoveBullet()
         {
-            if(_speed == 0) return;
+            if(_speed == 0 || !bMove) return;
             var speed = (float)(_speed / 2) * (_durationTime - lastTime);
             // 计算方向向量
             Vector3 direction = (_tage.position - transform.position);

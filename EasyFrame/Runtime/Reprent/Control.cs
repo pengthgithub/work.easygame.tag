@@ -7,7 +7,8 @@ namespace Easy
     /// <summary>
     /// 控制器
     /// </summary>
-    [Icon("Packages/EasyFrame/Editor/Icon/icon.png")][ExecuteAlways] public partial class Control : MonoBehaviour
+    [Icon("Packages/EasyFrame/Editor/Icon/icon.png")]
+    public partial class Control : MonoBehaviour
     {
         [Header("基础信息")]
         

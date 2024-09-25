@@ -24,7 +24,7 @@ namespace Easy
             if (renders == null || renders.Length == 0) return;
             foreach (var render in renders)
             {
-                foreach (var mat in render.materials)
+                foreach (var mat in render.sharedMaterials)
                 {
                     materials.Add(mat);
                 }

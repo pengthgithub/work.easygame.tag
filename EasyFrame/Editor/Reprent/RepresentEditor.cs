@@ -1,11 +1,11 @@
-﻿#if UNITY_EDITOR
+﻿
 using UnityEditor;
 using UnityEngine;
 
 namespace Easy
 {
     [CustomEditor(typeof(Represent))]
-    public class RepresentEditor:Editor
+    public class RepresentEditor:UnityEditor.Editor
     {
         private Represent rep;
         private void OnEnable()
@@ -34,4 +34,3 @@ namespace Easy
         }
     }
 }
-#endif

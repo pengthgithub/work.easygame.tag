@@ -98,9 +98,9 @@ namespace Easy
 #region Transform Extension
         public static Transform Reset(this Transform trans)
         {
-            // trans.localPosition = new Vector3(0, 0, 0);
-            // trans.localEulerAngles = new Vector3(0, 0, 0);
-            // trans.localScale = new Vector3(1, 1, 1);
+            trans.localPosition = new Vector3(0, 0, 0);
+            trans.localEulerAngles = new Vector3(0, 0, 0);
+            trans.localScale = new Vector3(1, 1, 1);
             return trans;
         }
 

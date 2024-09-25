@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using System.IO;
+﻿using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -368,5 +367,3 @@ namespace Easy
         }
     }
 }
-
-#endif

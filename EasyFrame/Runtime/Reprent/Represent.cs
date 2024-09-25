@@ -30,6 +30,18 @@ namespace Easy
 
     public partial class Represent
     {
+        /// <summary>
+        /// 启用特效
+        /// </summary>
+        public static bool EnableSfx = true;
+        /// <summary>
+        /// 启用角色
+        /// </summary>
+        public static bool EnableActor = true;
+        
+        /// <summary>
+        /// 检测生命周期
+        /// </summary>
         public bool CheckLifeTag;
         
         /// <summary>
@@ -82,6 +94,8 @@ namespace Easy
         {
             set
             {
+                if(!_0Control) return;
+                _0Control.EnableOutLine = value;
             }
         }
 
@@ -123,7 +137,7 @@ namespace Easy
         {
             if (isDisposed || !origin) return;
            
-            if (origin is SfxParticle)
+            if (origin is SfxParticle && EnableSfx)
             {
                 var _sfxParticle = ScriptableObject.Instantiate(origin) as SfxParticle;
                 while (Owner && Owner._0LoadEnd == false)
@@ -133,7 +147,7 @@ namespace Easy
                 if (isDisposed) return;
                 InitTag(_sfxParticle);
             }
-            else
+            else if(EnableActor)
             {
                 var _represent = Instantiate(origin as GameObject, gameObject.transform, false);
                 _0Control = _represent.GetComponent<Control>();
@@ -148,12 +162,19 @@ namespace Easy
             {
                 transform.position = Owner.Position;
             }
-            SetOwner();
+
+            if (EnableSfx)
+            {
+                ResetTag();
+            }
             
-            var useTime = Time.realtimeSinceStartup - _loadTime;
-            SetActive();
-            if(_0Control) _0Control.Play(_animationName, false, useTime);
-            
+            if (EnableActor)
+            {
+                var useTime = Time.realtimeSinceStartup - _loadTime;
+                SetActive();
+                if(_0Control) _0Control.Play(_animationName, false, useTime);
+            }
+
             completeEvent?.Invoke();
         }
 

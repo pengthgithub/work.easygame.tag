@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+﻿
 using System;
 using UnityEditor;
 using UnityEngine;
@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Easy
 {
     [CustomEditor(typeof(SfxControl))]
-    public class SfxControlEditor : Editor
+    public class SfxControlEditor : UnityEditor.Editor
     {
         private SfxControl _sfxControl;
         private void OnEnable()
@@ -42,4 +42,3 @@ namespace Easy
         }
     }
 }
-#endif

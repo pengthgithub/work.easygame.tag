@@ -107,7 +107,7 @@ namespace Easy
             if(represent == null || represent.disposeEnd) return;
             represent.gameObject.SetActive(false);
 #if UNITY_EDITOR 
-            represent.gameObject.hideFlags = HideFlags.HideInHierarchy;
+            //represent.gameObject.hideFlags = HideFlags.HideInHierarchy;
 #endif
             _maps.Release(represent.url, represent);
         }

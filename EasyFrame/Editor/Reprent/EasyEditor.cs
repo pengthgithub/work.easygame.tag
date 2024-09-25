@@ -1,10 +1,10 @@
-﻿#if UNITY_EDITOR
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace Easy
 {
@@ -42,12 +42,7 @@ namespace Easy
                 go.transform.RemoveMissingComponent();
             }
         }
-        
-        
-        
-        
-        
-        
+  
         
         
         static EasyEditor()
@@ -98,20 +93,20 @@ namespace Easy
                     FieldInfo root = sCurrentToolbar.GetType()
                         .GetField("m_Root", BindingFlags.NonPublic | BindingFlags.Instance);
                     
-                    // var concreteRoot = root.GetValue(sCurrentToolbar);
-                    // VisualElement toolbarZone = concreteRoot.Q("ToolbarZoneRightAlign");
-                    // VisualElement parent = new VisualElement()
-                    // {
-                    //     style =
-                    //     {
-                    //         flexGrow = 1,
-                    //         flexDirection = FlexDirection.Row,
-                    //     }
-                    // };
-                    // IMGUIContainer container = new IMGUIContainer();
-                    // container.onGUIHandler += OnGuiBody;
-                    // parent.Add(container);
-                    // toolbarZone.Add(parent);
+                    VisualElement concreteRoot = root.GetValue(sCurrentToolbar) as VisualElement;
+                    VisualElement toolbarZone = concreteRoot.Q("ToolbarZoneRightAlign");
+                    VisualElement parent = new VisualElement()
+                    {
+                        style =
+                        {
+                            flexGrow = 1,
+                            flexDirection = FlexDirection.Row,
+                        }
+                    };
+                    IMGUIContainer container = new IMGUIContainer();
+                    container.onGUIHandler += OnGuiBody;
+                    parent.Add(container);
+                    toolbarZone.Add(parent);
                 }
             }
         }
@@ -139,25 +134,17 @@ namespace Easy
             GUILayout.BeginHorizontal();
             if (Application.isPlaying == false)
             {
-                if (GUILayout.Button(new GUIContent("启动游戏", EditorGUIUtility.FindTexture("PlayButton"))))
+                if (GUILayout.Button(new GUIContent("", EditorGUIUtility.FindTexture("PlayButton"))))
                 {
-                    if (checkRes)
-                    {
-                        //S2DEditor.AutoAddAddress();
-                    }
                     EditorPrefs.SetBool("Play", true);
                     EditorApplication.EnterPlaymode();
                 }
-
-                EditorGUI.BeginChangeCheck();
-                checkRes = GUILayout.Toggle(checkRes, new GUIContent(""));
-                if (EditorGUI.EndChangeCheck())
-                {
-                    EditorPrefs.SetBool("CheckRes", checkRes);
-                }
             }
 
-            Time.timeScale = EditorGUILayout.Slider("", Time.timeScale, 0, 3);
+            if (Application.isPlaying)
+            {
+                Time.timeScale = EditorGUILayout.Slider("", Time.timeScale, 0, 3);
+            }
 
             GUILayout.EndHorizontal();
         }
@@ -165,4 +152,3 @@ namespace Easy
         
     }
 }
-#endif

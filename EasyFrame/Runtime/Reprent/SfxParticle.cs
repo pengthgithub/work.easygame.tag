@@ -33,7 +33,14 @@ namespace Easy
         private bool bInited = false;
         internal void Init()
         {
-            if(bInited) return;
+            if (bInited)
+            {
+                foreach (var sfx in needUpdate)
+                {
+                    sfx.Init();
+                }
+                return;
+            }
             bInited = true;
             needUpdate.Clear();
             foreach (var sfx in sfxPrefab)
@@ -51,11 +58,6 @@ namespace Easy
             foreach (var sfx in sfxSound)
             {
                 needUpdate.Add(sfx);
-            }
-            
-            foreach (var sfx in needUpdate)
-            {
-                sfx.Init();
             }
         }
         internal void OnUpdate(float durationTime)
@@ -104,13 +106,13 @@ namespace Easy
         {
             duaration = duration;
             if(sleep) return;
-            if (duaration > (lifeTime + bindTime) && lifeTime != 0)
+            if (duaration >= (lifeTime + bindTime) && lifeTime != 0)
             {
-                Death();
+                OnDeath();
                 return;
             }
             
-            if (duration > bindTime && !bBind)
+            if (duration >= bindTime && !bBind)
             {
                 bBind = true;
                 OnBind();
@@ -127,11 +129,7 @@ namespace Easy
             bBind = false;
         }
 
-        internal virtual void Death()
-        {
-            Dispose();
-        }
-
+        protected virtual void OnDeath(){ }
         protected virtual void OnBind(){ }
         protected virtual void OnUpdate(){ }
         protected virtual void OnDispose(){ }
@@ -278,8 +276,13 @@ namespace Easy
             isLine = false;
         }
 
-        protected virtual void OnDeath()
+        protected override void OnDeath()
         {
+            if (__display == null)
+            {
+                Dispose();
+                return;
+            }
             var count = clipList.Count;
             deathTime += Time.deltaTime * __self.Speed;
             if (deathTime > deleteNow)
@@ -289,8 +292,8 @@ namespace Easy
                 Dispose();
                 return;
             }
-            
-            if(count == 0) return;
+			__display.Dispose();
+            if (count == 0)return;
             var index = Random.Range(0, count);
             var data = clipList[index];
             __display.Play(data.name);
