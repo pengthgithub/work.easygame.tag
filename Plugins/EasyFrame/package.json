@@ -1,0 +1,27 @@
+{
+  "name": "com.easyframe.easy",
+  "description": "简单的游戏框架",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "displayName": "EasyFrame",
+  "dependencies": {
+    "com.unity.mathematics": "1.2.1"
+  },
+  "keywords": [
+    "graphics",
+    "performance",
+    "rendering",
+    "mobile",
+    "render",
+    "pipeline"
+  ],
+  "category": "tool",
+  "author": {
+	  "name": "Pength",
+	  "email": "pength@live.cn",
+	  "url": "https://www.zhihu.com/people/UE5.0"
+  },
+  "license": "MIT",
+  "samples": [
+  ]
+}
