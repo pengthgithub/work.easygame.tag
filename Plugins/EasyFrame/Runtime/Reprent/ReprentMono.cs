@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Serialization;
 
 namespace Easy
 {
@@ -10,6 +11,19 @@ namespace Easy
     /// </summary>
     public partial class Represent : MonoBehaviour
     {
+        public enum RepresentStat
+        {
+            RsCreate,       //创建状态
+            RsLoadingRes,   //资源加载状态
+            RsLoadEnd,      //加载完成
+            
+            RsDisposing,    //释放中
+            RsDisposeEnd,   //资源释放结束
+            
+            RsDeathing,     //死亡中表现
+            RsDeathEnd,     //死亡结束
+            RsRelease       //释放完毕
+        }
         //========================================================================
         //  调试信息
         //========================================================================
@@ -19,17 +33,19 @@ namespace Easy
         
         [SerializeField] [Rename("唯一ID")] public int ID;
         
-        [SerializeField] [Rename("创建时间")] private int createFrame;
-        [SerializeField] [Rename("删除时间")] protected string destroyFrame;
+        [SerializeField] [Rename("存活时间")] private float currentLifeTime;
         
         [SerializeField] [Rename("创建完成时间")] protected int waitCreateTime; //-1：重置加载时间表示已经加载好了 0：开始加载
         [SerializeField] [Rename("更新位置")] public Vector3 lastPosition;
 
         [SerializeField] [Rename("资源路径")] protected string url;
-        [SerializeField] [Rename("删除时间")] private float _delayTime;
-        [SerializeField] [Rename("是否删除")] protected bool isDisposed;
+        [SerializeField] [Rename("延迟删除时间")] private float _delayTime;
+        
+        [SerializeField] [Rename("当前状态")] protected RepresentStat __stat;
+        
         [SerializeField] [Rename("播放速度")] protected float playSpeed;
         [SerializeField] [Rename("播放的动画名")] protected string _animationName;
+        
         [SerializeField] private List<Vector3> debugList;
         [SerializeField] private Represent _Owner;
         #endregion
@@ -105,18 +121,31 @@ namespace Easy
                         _Owner.RemvoveOwnerSfx(this);
                     }
                     _Owner = null;
+                    hasOwner = false;
                 }
                 else
                 {
                     _Owner = value;
                     _Owner.AddOwnerSfx(this);
-
+                    hasOwner = true;
                     Position = _Owner.Position;
                 }
             }
         }
 
-        public Represent Target { get; set; }
+        public bool hasOwner = false;
+        public bool hasTarget = false;
+        [SerializeField]private Represent _Target;
+        public Represent Target
+        {
+            get=> _Target;
+            set
+            {
+                _Target = value;
+                if (value) hasTarget = true;
+                else hasTarget = false;
+            } 
+        }
 
         public float Speed
         {
@@ -218,58 +247,79 @@ namespace Easy
         public void Dispose(float delayTime = 0)
         {
 #if UNITY_DEBUG
-            debugStr = "主动调用删除";
-            destroyFrame += $"{Time.frameCount}-";
-#endif
-            // 同一对象重复调用回收处理，直接返回
-            if (isDisposed) return;
-            isDisposed = true;
-            disposeEvent?.Invoke();
-            //主动调用删除之后不在回调
-            disposeEvent = null;
             
-            _delayTime = delayTime;
-            dureationDelayTIme = 0;
+            
+#endif
+
+            // 同一对象重复调用回收处理，直接返回
+            if (__stat >= RepresentStat.RsDisposing) return;
+#if UNITY_EDITOR
+            debugStr = "主动调用删除";
+            currentLifeTime = Time.realtimeSinceStartup - _loadResUsingTime;
+#endif
             //如果时间为0 直接删除
             if (_delayTime == 0) OnDispose();
+            else
+            {
+                _dureationDelayTIme = 0;
+                _delayTime = delayTime;
+                __stat = RepresentStat.RsDisposing;
+            }
         }
-        private float dureationDelayTIme = 0;
-
-        protected void LateUpdate()
+        private float _dureationDelayTIme = 0;
+        private void UpdateDisposeDelay()
         {
-            LateLoadPrefab();
-            
-            UpdateTag();
-            
             if (_delayTime <= 0) return;
-            dureationDelayTIme += Time.deltaTime * Speed;
-            if (dureationDelayTIme > _delayTime)
+            _dureationDelayTIme += Time.deltaTime * Speed;
+            if (_dureationDelayTIme > _delayTime)
             {
                 _delayTime = 0;
-                dureationDelayTIme = 0;
+                _dureationDelayTIme = 0;
                 OnDispose();
             }
         }
-
-        private bool disposeEnd = false;
+        
+        protected void LateUpdate()
+        {
+            //这里是延迟加载资源
+            if(__stat < RepresentStat.RsLoadingRes)  LoadRepresent();
+            
+            //是标签采取更新
+            if(__IsSfxTag) UpdateTag();
+            
+            //在延迟的时候才刷新
+            if(__stat == RepresentStat.RsDisposing) UpdateDisposeDelay();
+        }
+        
         /// <summary>
         /// 回收方法
         /// </summary>
         protected void OnDispose()
         {
-            if(disposeEnd) return;
-            lateLoad = false;
-            OnAnimationPlayEnd = null;
+            if (__stat == RepresentStat.RsDisposeEnd) return;
+            __stat = RepresentStat.RsDisposeEnd;
 
+            _animationName = "";
+            disposeEvent?.Invoke();
+            //主动调用删除之后不在回调
+            disposeEvent = null;
+            OnAnimationPlayEnd = null;
             Owner = null;
             Target = null;
-            
-            isDisposed = true;
             lastPosition = Vector3.zero;
+            if(__0Control) __0Control.Dispose();
+            
             DisposeOwnerSfx();
-            DisposeTag();
-            Release(this);
-            disposeEnd = true;
+
+            if (__IsSfxTag)
+            {
+                DisposeTag();
+            }
+            else
+            {
+                __stat = RepresentStat.RsRelease;
+                Release(this);
+            }
         }
 
         #endregion
@@ -282,25 +332,16 @@ namespace Easy
             enabled = true;
             playSpeed = 1;
             _active = true;
-            lateLoad = false;
-            destroyFrame = "";
             _delayTime = 0;
-            isDisposed = false;
-            disposeEnd = false;
-            createFrame = Time.frameCount;
+            currentLifeTime = 0;
             gameObject.SetActive(true);
             _animationName = "";
             waitCreateTime = 0;
             ID = GetInstanceID();
+            __stat = RepresentStat.RsCreate;
         }
         #endregion
-
-        private void OnDestroy()
-        {
-            
-        }
-
-
+        
         //====================================================================
         //  编辑器调试信息
         //====================================================================

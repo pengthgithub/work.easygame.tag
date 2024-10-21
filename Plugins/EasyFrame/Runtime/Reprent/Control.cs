@@ -15,7 +15,7 @@ namespace Easy
         /// <summary>
         /// 基础信息
         /// </summary>
-        [SerializeField] private bool active;
+        [SerializeField] private bool active = true;
         [SerializeField] public Renderer[] renders;
         [SerializeField] private int sortOrder;
         private void Awake()
@@ -24,8 +24,8 @@ namespace Easy
             {
                 renders = gameObject.GetComponentsInChildren<Renderer>();
             }
-            
-            InitMat();
+
+            active = true;
         }
 
         //====================================================================
@@ -41,7 +41,6 @@ namespace Easy
         {
             if(active == val) return;
             active = val;
-            
             if(renders == null) return;
             foreach (var ren in renders)
             {
@@ -83,8 +82,63 @@ namespace Easy
                 }
             }
         }
- 
+
+        private bool flipX = false;
+        public bool FlipX
+        {
+            get => flipX;
+            set
+            {
+                if(flipX == value) return;
+                flipX = value;
+                
+                if(renders == null) return;
+                foreach (var ren in renders)
+                {
+                    if (ren is SpriteRenderer)
+                    {
+                        var spRen = ren as SpriteRenderer;
+                        spRen.flipX = value;
+                    }
+                }
+            }
+        }
+        
+        private bool flipY = false;
+        public bool FlipY
+        {
+            get => flipY;
+            set
+            {
+                if(flipY == value) return;
+                flipY = value;
+                
+                if(renders == null) return;
+                foreach (var ren in renders)
+                {
+                    if (ren is SpriteRenderer)
+                    {
+                        var spRen = ren as SpriteRenderer;
+                        spRen.flipY = value;
+                    }
+                }
+            }
+        }
         #endregion
+
+        public void Init()
+        {
+            if(animator) animator.enabled = true;
+            if(renders == null) return;
+            foreach (var ren in renders)
+            {
+                if (ren is SpriteRenderer)
+                {
+                    var spRen = ren as SpriteRenderer;
+                    spRen.color = Color.white;
+                }
+            }
+        }
 
         private void LateUpdate()
         {
@@ -93,7 +147,8 @@ namespace Easy
 
         internal void Dispose()
         {
-            
+            Init();
+            Stop();
         }
 
         //====================================================================
@@ -118,6 +173,7 @@ namespace Easy
                if (ren)
                {
                     boxCollider.size = ren.bounds.size * boxScale;
+                    active = ren.enabled;
                }
             }
             transform.GetChild(0).hideFlags = hideChild ? HideFlags.HideInHierarchy : HideFlags.None;

@@ -24,7 +24,7 @@ namespace Easy
             if (renders == null || renders.Length == 0) return;
             foreach (var render in renders)
             {
-                foreach (var mat in render.sharedMaterials)
+                foreach (var mat in render.materials)
                 {
                     materials.Add(mat);
                 }
@@ -42,9 +42,9 @@ namespace Easy
         [SerializeField] [Tooltip("边缘光区域")] private float rimArea;
 
         [SerializeField] [Tooltip("Alpha小于128,使用公共的描边颜色。")]
-        private Color outLineColor;
+        private Color outLineColor =  Color.white;
 
-        [SerializeField] [Tooltip("描边")] private bool enableOutLine;
+        [SerializeField] [Tooltip("描边")] private bool enableOutLine = false;
         [SerializeField] [Tooltip("描边宽度")] private float outLineWidth = 1.0f;
 
         public float Alpha
@@ -125,7 +125,16 @@ namespace Easy
             set
             {
                 outLineColor.a = value ? 1 : 0;
-                enableOutLine = value;
+                if (enableOutLine != value)
+                {
+                    enableOutLine = value;
+                    foreach (var mat in materials)
+                    {
+                        if(enableOutLine)mat.EnableKeyword("_OUTLINE_ON");
+                        else mat.DisableKeyword("_OUTLINE_ON");
+                    }
+                }
+                
                 if (value == false)
                 {
                     OutLineWidth = 1;
@@ -141,6 +150,7 @@ namespace Easy
                 if (!value.Equals(outLineWidth))
                 {
                     outLineWidth = value;
+                    ModifyParam(false, EnableOutLine, false, false);
                 }
             }
         }
@@ -154,9 +164,13 @@ namespace Easy
             {
                 if (value != _changeColor)
                 {
-                    ModifyMatOnce(true);
+                    _changeColor = value;
+                    foreach (var mat in materials)
+                    {
+                        if (_changeColor) mat.EnableKeyword("_CHANGECOLOR");
+                        else mat.DisableKeyword("_CHANGECOLOR");
+                    }
                 }
-                _changeColor = value;
             }
         }
 
@@ -179,15 +193,12 @@ namespace Easy
         private MaterialPropertyBlock _propertyBlock;
         internal bool canUpdate = false;
 
-        private void ModifyMatOnce(bool changColor)
+        private void ModifyMatOnce()
         {
             foreach (var mat in materials)
             {
-                if (changColor)
-                {
-                    if (_changeColor) mat.EnableKeyword("_CHANGECOLOR");
-                    else mat.DisableKeyword("_CHANGECOLOR");
-                }
+                if (_changeColor) mat.EnableKeyword("_CHANGECOLOR");
+                else mat.DisableKeyword("_CHANGECOLOR");
             }
         }
         
@@ -197,9 +208,17 @@ namespace Easy
         /// <param name="modifyType"></param>
         internal void ModifyParam(bool enableAlpha, bool enableOutLine, bool rimEnable, bool enableMaskTexture)
         {
+            if (materials.Count == 0)
+            {
+                InitMat();
+            }
+            
             foreach (var mat in materials)
             {
-                if(enableAlpha) mat.SetFloat("_Alpha", matFade);
+                if (enableAlpha)
+                {
+                    mat.SetFloat("_Alpha", matFade);
+                }
                
                 if (rimEnable)
                 {

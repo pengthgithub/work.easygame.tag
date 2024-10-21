@@ -23,7 +23,12 @@ namespace Easy
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-
+            if (GUILayout.Button("描边"))
+            {
+                rep.OutLine = !rep.OutLine;
+            }
+            
+            EditorGUILayout.Space(10);
             url = EditorGUILayout.TextField("路径", url);
             if (GUILayout.Button("创建"))
             {

@@ -32,6 +32,18 @@ namespace Easy
                 }
             }
         }
+
+        public bool hasError()
+        {
+            if (locators == null || locators.Count == 0) return true;
+            
+            foreach (var loc in locators)
+            {
+                if (!loc.Locator) return true;
+            }
+
+            return false;
+        }
         
         /// <summary>
         /// 获取插槽
@@ -48,7 +60,13 @@ namespace Easy
                     return loc.Locator;
                 }
             }
-
+            
+#if UNITY_EDITOR
+            if (type != 0)
+            {
+                Debug.LogError($"{gameObject.name} 上不存在插槽{Enum.GetName(typeof(LocatorType), type)}");
+            }
+#endif
             return transform;
         }
     }

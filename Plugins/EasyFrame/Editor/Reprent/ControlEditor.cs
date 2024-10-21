@@ -197,7 +197,7 @@ namespace Easy
         private void DrawLocatorBtn()
         {
             EditorGUILayout.Space();
-            if (GUILayout.Button("刷新插槽", GUILayout.Width(80),GUILayout.Height(30)))
+            if (GUILayout.Button("刷新插槽 3", GUILayout.Width(80),GUILayout.Height(30)))
             {
                 for (int i = 0; i < control.locators.Count; i++)
                 {
@@ -205,10 +205,10 @@ namespace Easy
                     if(i == 0) ld.Type = LocatorType.origin;
                     if(i == 1) ld.Type = LocatorType.body;
                     if(i == 2) ld.Type = LocatorType.top;
-                    if(i == 3) ld.Type = LocatorType.bip_l_hand;
-                    if(i == 4) ld.Type = LocatorType.bip_r_hand;
-                    if(i == 5) ld.Type = LocatorType.bip_bullet;
-                    if(i == 6) ld.Type = LocatorType.bip_bullet01;
+                    // if(i == 3) ld.Type = LocatorType.bip_l_hand;
+                    // if(i == 4) ld.Type = LocatorType.bip_r_hand;
+                    // if(i == 5) ld.Type = LocatorType.bip_bullet;
+                    // if(i == 6) ld.Type = LocatorType.bip_bullet01;
                     control.locators[i] = ld;
                 }
                 
@@ -226,6 +226,26 @@ namespace Easy
                     if (ld.Type == LocatorType.top)
                     {
                         ld.Locator = control.transform.FindChildByName("top");
+                    }
+                    if (ld.Type == LocatorType.bullet01)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bullet01");
+                    }
+                    if (ld.Type == LocatorType.bullet02)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bullet02");
+                    }
+                    if (ld.Type == LocatorType.bullet03)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bullet03");
+                    }
+                    if (ld.Type == LocatorType.bullet04)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bullet04");
+                    }
+                    if (ld.Type == LocatorType.bullet05)
+                    {
+                        ld.Locator = control.transform.FindChildByName("bullet05");
                     }
                     if (ld.Type == LocatorType.bip_l_hand)
                     {

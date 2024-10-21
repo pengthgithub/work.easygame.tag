@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.Universal;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
 namespace Easy
@@ -22,7 +25,38 @@ namespace Easy
             _bPlaying = false;
         }
         
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            OrderDirIn2D(OrderValue);
+        }
+#endif
+        
+        
         //==============================================================
+
+        #region 2D渲染顺序
+
+        [SerializeField] [Rename("渲染顺序")] private int OrderValue = 1;
+        /// <summary>
+        /// 改变排序方向
+        /// </summary>
+        /// <param name="forwad">1: forwad 前向  -1:back 后向</param>
+        public void OrderDirIn2D(int forwad)
+        {
+            var urp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (urp)
+            {
+                Renderer2DData renderData = urp.scriptableRendererData as Renderer2DData;
+                if (renderData)
+                {
+                    renderData.transparencySortAxis = new Vector3(0, 0, forwad);
+                }
+            }
+        }
+
+        #endregion
+        
         #region 摄像机
         /// <summary>
         /// 住摄像机
@@ -95,15 +129,28 @@ namespace Easy
         /// <summary>
         /// 修改分辨率
         /// </summary>
-        public static void ApplyScreenWidth()
+        public static void ApplyScreenWidth(float width, float height)
         {
             var aspect = 828.0f / 1792.0f;
-            var displayAspect = UIAspect;
-            if (aspect.Equals(displayAspect)) return;
-
+            var displayAspect = (width > 828?828:width)/height;
             if (MainCamera == null) return;
-            float defaultFov = 15.0f;
-            MainCamera.fieldOfView = defaultFov / (displayAspect / aspect);
+            if (MainCamera.orthographic == false)
+            {
+                float defaultFov = 15.0f;
+                MainCamera.fieldOfView = defaultFov / (displayAspect / aspect);
+            }
+            else
+            {
+                var ppc = MainCamera.GetComponent<PixelPerfectCamera>();
+                if (ppc)
+                {
+                    ppc.assetsPPU = (int)(97 * (height / 1792) );
+                }
+                else
+                {
+                    MainCamera.orthographicSize = 5.4f / (displayAspect / aspect) ;
+                }
+            }
         }
         #endregion
         
@@ -261,7 +308,7 @@ namespace Easy
         /// 切换摄象机
         /// </summary>
         /// <param name="dir">0:默认 1:敌对 后续要加载</param>
-        private void RotationScene(int dir = 0)
+        public void RotationScene(int dir = 0)
         {
             var defaultAngle = dir;
             if (levelNode)
@@ -272,6 +319,49 @@ namespace Easy
                 levelNode.eulerAngles = angle;
             }
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type">0:下方 1:上方</param>
+        public void ChangeCameraPos(int type)
+        {
+            if (MainCamera != null && levelNode)
+            {
+                if (type == 1)
+                {
+                    //Matrix4x4 mat = MainCamera.projectionMatrix;
+                    //mat *= Matrix4x4.Scale(new Vector3(1, -1, 1));
+                    //MainCamera.projectionMatrix = mat;
+
+                    var angle = MainCamera.transform.eulerAngles;
+                    angle.y = 180;
+                    MainCamera.transform.eulerAngles = angle;
+                    MainCamera.transform.localPosition = mutlPos; //new Vector3(13.5f, 200f, 16.7f);
+                    //var pos = MainCamera.transform.localPosition;
+                    //pos.z = 17.3f;
+                    //MainCamera.transform.localPosition = pos;
+                    //OrderDirIn2D(-1);
+                }
+                else
+                {
+                    //Matrix4x4 mat = MainCamera.projectionMatrix;
+                    //mat *= Matrix4x4.Scale(new Vector3(1, 1, 1));
+                    //MainCamera.projectionMatrix = mat;
+
+                    var angle = MainCamera.transform.eulerAngles;
+                    angle.y = 0;
+                    MainCamera.transform.eulerAngles = angle;
+                    MainCamera.transform.localPosition = defaultPos;// new Vector3(13.5f, 200f, 15.9f);
+                    //var pos = MainCamera.transform.localPosition;
+                    //pos.z = 15.5f;
+                    //MainCamera.transform.localPosition = pos;
+                    //OrderDirIn2D(1);
+                }
+            }
+        }
+        
         #endregion
         
         //==================================================================

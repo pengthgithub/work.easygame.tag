@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Easy
 {
@@ -11,7 +12,7 @@ namespace Easy
         #region
         private static PoolUtil<Represent> _representPool;
         private static CustomPool<Represent> _maps;
-        
+
         public static void PoolInit(int count = 200)
         {
             if(_maps != null) return;
@@ -42,6 +43,9 @@ namespace Easy
                     GameObject.DestroyImmediate(ck.gameObject);
                 }
             });
+#if UNITY_EDITOR
+            EasyProfilerRuntime.Initialise();
+#endif
         }
 
         public static void PoolDispose()
@@ -75,15 +79,16 @@ namespace Easy
             string birthRepresent = "",string birthAni = "idle"
             )
         {
+            Profiler.BeginSample("Represent.Create");
             if (string.IsNullOrEmpty(url)) return null;
-                
+
             Represent represent = _maps.Get(url);
             if (represent == null)
             {
                 Debug.LogError("represent create error url: " + url);
                 return null;
             }
-            
+
             represent.Init();
             if (owner)
             {
@@ -91,10 +96,18 @@ namespace Easy
             }
             if (complate != null) represent.completeEvent = complate;
             if (dispose != null) represent.disposeEvent = dispose;
+            
 #if UNITY_EDITOR
-            represent.gameObject.hideFlags = HideFlags.None;
+            var c = _maps.MaxCount(url);
+            represent.gameObject.name = url + "__" + c;
+            //represent.gameObject.hideFlags = HideFlags.None;
 #endif
             represent.gameObject.SetActive(true);
+            Profiler.EndSample();
+            
+#if UNITY_EDITOR  
+            EasyProfilerRuntime.ReprentCreate();
+#endif
             return represent;
         }
 
@@ -104,19 +117,30 @@ namespace Easy
         /// <param name="represent"></param>
         private static void Release(Represent represent)
         {
-            if(represent == null || represent.disposeEnd) return;
+            if (represent == null || _maps == null)
+            {
+                return;
+            }
             represent.gameObject.SetActive(false);
-#if UNITY_EDITOR 
-            //represent.gameObject.hideFlags = HideFlags.HideInHierarchy;
-#endif
             _maps.Release(represent.url, represent);
+            
+#if UNITY_EDITOR   
+            EasyProfilerRuntime.ReprentRemove();
+#endif
         }
 
-        public static void Remove(Represent represent)
+#if UNITY_EDITOR
+        /// <summary>
+        /// 编辑器删除
+        /// </summary>
+        /// <param name="represent"></param>
+        public static void RemoveWithEditorModel(Represent represent)
         {
             if(represent == null) return;
             _maps.Remove(represent.url, represent);
         }
+#endif
+        
         #endregion
 
     }

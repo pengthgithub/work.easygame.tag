@@ -17,6 +17,9 @@ namespace Easy
         [SerializeField] [HideInInspector] public Vector3 pos;
         #endif
         
+        [HideInInspector][SerializeField] [Rename("路径")] public string url;
+        [HideInInspector] [SerializeField][Rename("总死亡时间")] public float deathTimeTotal = 0;
+        
         [SerializeField] [Rename("生命周期，0为永久")] [Range(0, 20)]
         public float lifeTime;
         [SerializeField] [Rename("播放速率")] [Range(0, 4)]
@@ -31,7 +34,10 @@ namespace Easy
         #region 逻辑处理
         private List<BaseSfx> needUpdate = new List<BaseSfx>();
         private bool bInited = false;
-        internal void Init()
+        /// <summary>
+        /// 初始化数据
+        /// </summary>
+        internal void Init(Represent self)
         {
             if (bInited)
             {
@@ -45,21 +51,30 @@ namespace Easy
             needUpdate.Clear();
             foreach (var sfx in sfxPrefab)
             {
+                sfx.__self = self;
                 needUpdate.Add(sfx);
             }
             foreach (var sfx in sfxOwner)
             {
+                sfx.__self = self;
                 needUpdate.Add(sfx);
             }
             foreach (var sfx in sfxShark)
             {
+                sfx.__self = self;
                 needUpdate.Add(sfx);
             }
             foreach (var sfx in sfxSound)
             {
+                sfx.__self = self;
                 needUpdate.Add(sfx);
             }
         }
+        
+        /// <summary>
+        /// 更新数据
+        /// </summary>
+        /// <param name="durationTime"></param>
         internal void OnUpdate(float durationTime)
         {
             foreach (var sfx in needUpdate)
@@ -67,7 +82,10 @@ namespace Easy
                 sfx.Update(durationTime);
             }
         }
-
+        
+        /// <summary>
+        /// 死亡数据
+        /// </summary>
         internal void Dispose()
         {
             foreach (var sfx in needUpdate)
@@ -75,7 +93,29 @@ namespace Easy
                 sfx.Dispose();
             }
         }
-
+        
+        /// <summary>
+        /// 标签外循环要立即死亡特效
+        /// </summary>
+        internal void Death()
+        {
+            foreach (var sfx in needUpdate)
+            {
+                sfx.Death();
+            }
+        }
+        
+        /// <summary>
+        /// 标签外循环跟新死亡效果
+        /// </summary>
+        /// <param name="durationTime"></param>
+        internal void DeathUpdate(float durationTime)
+        {
+            foreach (var sfx in needUpdate)
+            {
+                sfx.DeathUpdate();
+            }
+        }
         #endregion
     }
     
@@ -83,55 +123,124 @@ namespace Easy
     // 编辑的节点
     //===================================================================================================================
     #region 编辑节点
+    
+    /// <summary>
+    /// 标签当前的状态
+    /// </summary>
+    public enum SfxStat
+    {
+        NeedBindStat,   // 需要绑定状态
+        UpdatingStat,   // 更新状态
+        DeathingStat,   // 死亡中的状态 ，有死亡时的表现
+        DisposeStat,    // 所有操作完成 释放状态  
+            
+        End //中间可以加各种状态，比如受击 需要什么表现
+    }
+    
     [Serializable]
     public class BaseSfx
-    {
+    {        
         [Rename("绑定时间点")] [Range(0, 20)] [SerializeField]
         public float bindTime;
-
         [Rename("生命周期")] [Range(0, 20)] [SerializeField]
         public float lifeTime;
+        [Rename("死亡消失时间")] [Range(0, 2)] public float deleteNow;
 
-        private bool bBind = false;
-        private bool sleep = false;
-        protected float duaration = 0;
-
+        [Rename("调试标记")] public bool debug;
+        //==============================================================
+        //==============================================================
+        internal Represent __self;
+        protected float __duration;
+        
+        protected SfxStat stat;
+        private float totalTime = 0;
+        private float _deathTime = 0;
+        
         internal void Init()
         {
-            bBind = false;
-            sleep = false;
-            duaration = 0;
+            stat = SfxStat.NeedBindStat;
+            totalTime = 0;
+            _deathTime = 0;
+            __duration = 0;
+            if (lifeTime != 0) totalTime = lifeTime + bindTime;
         }
+        
         internal void Update(float duration)
         {
-            duaration = duration;
-            if(sleep) return;
-            if (duaration >= (lifeTime + bindTime) && lifeTime != 0)
+            __duration = duration;
+            
+            if(stat == SfxStat.DisposeStat) return;
+
+            if (stat == SfxStat.NeedBindStat && duration >= bindTime)
+            {
+                OnBind();
+                stat = SfxStat.UpdatingStat;
+            }
+
+            if (stat == SfxStat.UpdatingStat)
+            {
+                OnUpdate();
+
+                if (lifeTime != 0 && __duration > totalTime)
+                {
+                    if (deleteNow == 0)
+                    {
+                        stat = SfxStat.DisposeStat;
+                        Dispose();
+                    }
+                    else
+                    {
+                        stat = SfxStat.DeathingStat;
+                        _deathTime = 0;
+                        Death();
+                    }
+                }
+            }
+            
+            if (stat == SfxStat.DeathingStat)
             {
                 OnDeath();
-                return;
             }
-            
-            if (duration >= bindTime && !bBind)
-            {
-                bBind = true;
-                OnBind();
-            }
-            
-            if(!bBind) return;
-            OnUpdate();
         }
-
         internal void Dispose()
         {
             OnDispose();
-            sleep = true;
-            bBind = false;
+            stat = SfxStat.DisposeStat;
+        }
+        
+        /// <summary>
+        /// 死亡更新
+        /// </summary>
+        internal void DeathUpdate()
+        {
+            _deathTime += Time.deltaTime * __self.Speed;
+            if (_deathTime >= deleteNow)
+            {
+                Dispose();
+            }
         }
 
-        protected virtual void OnDeath(){ }
+        internal void Death()
+        {
+            stat = SfxStat.DeathingStat;
+            OnDeath();
+        }
+        
+        /// <summary>
+        /// 死亡时触发
+        /// </summary>
+        protected virtual void OnDeath() { }
+        /// <summary>
+        /// 绑定
+        /// </summary>
         protected virtual void OnBind(){ }
+        /// <summary>
+        /// 绑定更新
+        /// </summary>
         protected virtual void OnUpdate(){ }
+        /// <summary>
+        /// 释放
+        /// </summary>
         protected virtual void OnDispose(){ }
     }
 
@@ -157,12 +266,14 @@ namespace Easy
         [Rename("不更新缩放")] [Tooltip("特效的所发和插槽无任何关系")] [SerializeField]
         public bool noScale;
         
-        [Rename("死亡消失时间")] [Range(0, 2)] public float deleteNow;
-        [SerializeField] public List<ClipData> clipList;
-        #region 逻辑控制
-        internal Represent __self;
-        internal SfxControl __display;
         
+        [SerializeField] public List<ClipData> clipList;
+        
+        #region 逻辑控制
+        
+        internal SfxControl __display;
+        internal bool __DisplayIsNotNull = false; 
+
         private float deathTime = 0;
         private bool isLine = false;
 
@@ -172,15 +283,9 @@ namespace Easy
         private void InitLocator()
         {
             //3.1 如果有施法主体，则查找主体上的插槽
-            if (__self.Owner)
+            if (__self.hasOwner)
             {
                 _locatorTs = __self.Owner.GetLocator(locatorType);
-                
-                if (!_locatorTs)
-                {
-                    _locatorTs = __self.Owner.transform;
-                }
-
                 __display.transform.localPosition = _locatorTs.transform.localPosition;
                 if (!noRotation)
                 {
@@ -200,15 +305,18 @@ namespace Easy
             if (targetlocatorType != LocatorType.none)
             {
                 _targetLocatorTs = __self.Target.GetLocator(targetlocatorType);
-            }
-            if (_targetLocatorTs == null)
+            }else
             {
                 _targetLocatorTs =  __self.Target.transform;
             }
         }
+        
         protected override void OnBind()
         {
-            if(!__display) return;
+            if(!__DisplayIsNotNull) return;
+            
+            lastSpeed = __self.Speed;
+            
             __display.gameObject.SetActive(true);
 
             if (targetlocatorType != LocatorType.none && __self.Target)
@@ -217,24 +325,22 @@ namespace Easy
                 InitTargetLocator();
             }
             InitLocator();
-            
-            //随机动画
-            var count = clipList.Count;
-            if (count != 0)
-            {
-                int index = Random.Range(0, count);
-                __display.Play(clipList[index].name);
-            }
         }
         #endregion
-        
+
+        #region 更新
+        private float lastSpeed = 1;
         private void UpdateLogic()
         {
             //0、 强制刷新位置，必须是要有插槽
-            if (!__display && !_locatorTs) return;
-            __display.Speed = __self.Speed;
+            if (!__DisplayIsNotNull || _locatorTs == null) return;
 
-            if (!_locatorTs) return;
+            if (lastSpeed.Equals(__self.Speed) == false)
+            {
+                __display.Speed = __self.Speed;
+                lastSpeed = __self.Speed;
+            }
+            
             //1、如果勾选了本地位置，只会在创建的时候刷新一下位置
             if (!useSfxPosition)
             {
@@ -267,6 +373,7 @@ namespace Easy
                 UpdateLogic();
             }
         }
+        #endregion
         
         protected override void OnDispose()
         {
@@ -274,30 +381,12 @@ namespace Easy
             _targetLocatorTs = null;
             deathTime = 0;
             isLine = false;
+            if(__DisplayIsNotNull) __display.Dispose();
         }
 
         protected override void OnDeath()
         {
-            if (__display == null)
-            {
-                Dispose();
-                return;
-            }
-            var count = clipList.Count;
-            deathTime += Time.deltaTime * __self.Speed;
-            if (deathTime > deleteNow)
-            {
-                __display.gameObject.SetActive(false);
-                __display.Dispose();
-                Dispose();
-                return;
-            }
-			__display.Dispose();
-            if (count == 0)return;
-            var index = Random.Range(0, count);
-            var data = clipList[index];
-            __display.Play(data.name);
-            deleteNow = data.length;
+            if(__DisplayIsNotNull) __display.Stop();
         }
         #endregion
     }
@@ -352,7 +441,7 @@ namespace Easy
         protected override void OnUpdate()
         {
             if(enableAlpha && enableOutLine && rimEnable && enableMaskTexture) return;
-            UpdateLogic(duaration);
+            UpdateLogic(__duration);
         }
         protected override void OnBind()
         {
@@ -452,35 +541,56 @@ namespace Easy
         #endregion
     }
 
+    public enum AudioPriorityGroup
+    {
+        none,
+        NormalAudio,    //普通音效
+        SkillAudio,     //技能音效
+        BossAudio       //Boss音效
+    }
+    public enum AudioPriority
+    {
+        none,
+        Low,        //底
+        Middle,     //中
+        High        //高
+    }
     [Serializable]
     public class SfxSound : BaseSfx
     {
         [SerializeField] [Rename("音量")] [Range(0, 1)]
         public float volume = 1f;
         [SerializeField] [Rename("是否循环播放")] public bool loop;
+        [SerializeField] [Rename("优先级")] public AudioPriority priority;
+        [SerializeField] [Rename("优先组")] public AudioPriorityGroup priorityGroup;
         [SerializeField] [Tooltip("随机列表，有值就用随机列表里的数据")]
         public List<AudioClip> randomClips;
         [SerializeField] [HideInInspector] public List<string> randomClipNames;
         
         #region 逻辑控制
-        private int _index;
+        internal AudioClip _clip;
+        /// <summary>
+        /// 正在播放的序列
+        /// </summary>
+        internal int playingIndex = -1;
+        
         protected override void OnBind()
         {
             var count = randomClips.Count;
             if (count != 0)
             {
                 int index = Random.Range(0, randomClips.Count);
-                AudioClip clip = randomClips[index];
+                _clip = randomClips[index];
                 if (SoundMgr.Instance)
                 {
-                    _index = SoundMgr.Instance.PlaySound(clip, volume, loop);
+                    playingIndex = SoundMgr.Instance.PlaySound(this);
                 }
             }
         }
         protected override void OnDispose()
         {
-            if(SoundMgr.Instance) SoundMgr.Instance.ReleaseSound(_index);
-            _index = 0;
+            if(SoundMgr.Instance) SoundMgr.Instance.ReleaseSound(playingIndex, priorityGroup);
+            playingIndex = -1;
         }
         #endregion
     }

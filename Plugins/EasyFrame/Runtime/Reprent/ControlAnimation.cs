@@ -9,8 +9,13 @@ namespace Easy
     [Serializable]
     public struct ClipData
     {
-        public string name;
-        public float length;
+        [SerializeField] [Rename("死亡动画")] public bool enabled;
+        [SerializeField] [Rename("动画名")]  public string name;
+        [SerializeField] [Rename("动画长度")]  public float length;
+        
+        #if UNITY_EDITOR
+        [SerializeField] public AnimationClip clip;
+        #endif
     }
     public partial class Control
     {
@@ -21,6 +26,7 @@ namespace Easy
         [SerializeField] [Range(-1, 4)] private float speed = 1;
         [SerializeField] private Transform center;
         [SerializeField] private float randomTime = 0;
+        
         /// <summary>
         /// 动画组件
         /// </summary>
@@ -69,7 +75,7 @@ namespace Easy
         /// </summary>
         private void InitAnimation()
         {
-            if(allAni.Count != 0) return;
+            if(allAni.Count != 0 && skinList.Count != 0) return;
             
 #if !UNITY_EDITOR
             Debug.Log($"离线获取动画数据失败，优化无效 {gameObject.name}");
@@ -99,18 +105,30 @@ namespace Easy
             {
                 animator = gameObject.GetComponentInChildren<Animator>();
             }
+            
+#if UNITY_EDITOR
             if (animator && skinList.Count == 0)
             {
-                RuntimeAnimatorController controller = animator.runtimeAnimatorController;
-                if (!controller) return;
-                skinList.Clear();
-                AnimationClip[] clips = controller.animationClips;
-                foreach (AnimationClip clip in clips)
+                UnityEditor.Animations.AnimatorController controller = animator.runtimeAnimatorController as  UnityEditor.Animations.AnimatorController;
+                if (controller != null)
                 {
-                    skinList.Add(clip.name);
-                    allAni.Add(new ClipData() { name = clip.name, length = clip.length });
+                    skinList.Clear();
+                    foreach (var layer in controller.layers)
+                    {
+                        // 遍历每个状态机
+                        foreach (var state in layer.stateMachine.states)
+                        {
+                            float len = 0;
+                            AnimationClip clip = state.state.motion as AnimationClip;
+                            if (clip != null) len = clip.length;
+                            
+                            skinList.Add(state.state.name);
+                            allAni.Add(new ClipData() { name = state.state.name, length = len });
+                        }
+                    }
                 }
             }
+#endif
         }
         /// <summary>
         /// 检测是那个类型的动画
@@ -121,14 +139,14 @@ namespace Easy
         {
             for (int i = 0, n = nodeAniList.Count; i < n; i++)
             {
-                if (nodeAniList[i].Equals(name))
+                if (nodeAniList[i] == name)
                 {
                     return 1;
                 }
             }
             for (int i = 0, n = skinList.Count; i < n; i++)
             {
-                if (skinList[i].Equals(name))
+                if (skinList[i] == name)
                 {
                     return 2;
                 }
@@ -214,7 +232,11 @@ namespace Easy
 
         public void Stop()
         {
-            
+            if(nodeAnimation != null) nodeAnimation.Stop();
+            if (animator)
+            {
+                animator.enabled = false;
+            }
         }
         #endregion
         

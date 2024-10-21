@@ -7,15 +7,18 @@ namespace Easy
     {
         [SerializeField] [Rename("更新时间")] public float _durationTime = 0;
         internal bool LockDirection = false;
+
+        private bool __IsSfxTag = false; //特效标签的标记
         
-        //_0表示变量数据不重置
-        private SfxParticle _0SfxParticle;
+        //__表示变量数据不重置
+        private SfxParticle __SfxParticle;
         private void InitTag(SfxParticle sfx)
         {
             _durationTime = 0;
             LockDirection = false;
-            _0SfxParticle = sfx;
-           
+            __SfxParticle = sfx;
+            __IsSfxTag = true;
+            __SfxParticle.Init(this);
             foreach (var sfxItem in sfx.sfxPrefab)
             {
                 //0. 没有对象直接报错返回
@@ -25,45 +28,64 @@ namespace Easy
                     return;
                 } 
             
-                sfxItem.__self = this;
+               
                 var item = GameObject.Instantiate(sfxItem.prefab, Vector3.zero, Quaternion.identity);
                 item.transform.SetParent(transform, false);
                 item.transform.localScale = Vector3.one;
                 item.SetActive(false);
                 sfxItem.__display = item.GetComponent<SfxControl>();
-                if (sfxItem.__display == null)
+                sfxItem.__DisplayIsNotNull = (sfxItem.__display != null);
+#if UNITY_EDITOR
+                if (sfxItem.__DisplayIsNotNull == false)
                 {
                     Debug.LogError($"{sfxItem.prefab.name} 预制件上没有挂载SfxControl组件");
                 }
+#endif
             }
         }
 
         public void ResetTag()
         {
             SetOwner();
-            if(_0SfxParticle) _0SfxParticle.Init();
+            if(__SfxParticle) __SfxParticle.Init(this);
         }
 
         private void SetOwner()
         {
-            if(!_0SfxParticle || !Owner) return;
-            foreach (var sfxItem in _0SfxParticle.sfxOwner)
+            if(!__SfxParticle || !Owner) return;
+            foreach (var sfxItem in __SfxParticle.sfxOwner)
             {
-                sfxItem.control = Owner._0Control;
+                sfxItem.control = Owner.__0Control;
             }
         }
         private void UpdateTag()
         {
-            if(isDisposed || !_0LoadEnd || !_0SfxParticle) return;
-            
-            _durationTime += Time.deltaTime * Speed;
-            //此处+0.1f 是 避免由于精度原因导致最后一帧的数据没有执行。
-            if (_0SfxParticle.lifeTime != 0 && _durationTime > (_0SfxParticle.lifeTime + 0.1f))
+            //死亡后数据更新
+            if (__stat == RepresentStat.RsDeathing)
             {
-                Dispose();
-                return;
+                _durationTime += Time.deltaTime * Speed;
+                __SfxParticle.DeathUpdate(_durationTime);
+
+                if (_durationTime > (__SfxParticle.deathTimeTotal + 0.1f))
+                {
+                    _durationTime = 0;
+                    TagDeathEnd();
+                }
             }
-            _0SfxParticle.OnUpdate(_durationTime);
+            
+            //未死亡前数据更新
+            if (__stat >= RepresentStat.RsLoadEnd && __stat < RepresentStat.RsDisposing)
+            {
+                _durationTime += Time.deltaTime * Speed;
+                __SfxParticle.OnUpdate(_durationTime);
+                
+                //此处+0.1f 是 避免由于精度原因导致最后一帧的数据没有执行。
+                if (__SfxParticle.lifeTime != 0 && _durationTime > (__SfxParticle.lifeTime + 0.1f))
+                {
+                    OnDispose();
+                }
+            }
+            
             
 #if UNITY_EDITOR
             UpdateMoveBullet();
@@ -73,22 +95,37 @@ namespace Easy
         {
             LockDirection = false;
             _durationTime = 0;
-            if(_0SfxParticle) _0SfxParticle.Dispose();
+            
+            DeathEndPlaySfx();
+            
+            if (__SfxParticle.deathTimeTotal != 0)
+            {
+                __stat = RepresentStat.RsDeathing;
+                __SfxParticle.Death();
+            }
+            else
+            {
+                TagDeathEnd();
+            }
+        }
 
-            DeathEffect();
+        private void TagDeathEnd()
+        {
+            __stat = RepresentStat.RsDeathEnd;
+            __SfxParticle.Dispose();
+            Release(this);
         }
 
         /// <summary>
         /// 死亡特效
         /// </summary>
-        private void DeathEffect()
+        private void DeathEndPlaySfx()
         {
-            if(!_0SfxParticle || !_0SfxParticle.deathSfx) return;
+            if(!__SfxParticle || !__SfxParticle.deathSfx) return;
             
-            var deathSfxName = _0SfxParticle.deathSfx.name;
-            
-            var rep = Represent.Create(deathSfxName);
+            var rep = Represent.Create(__SfxParticle.deathSfx.url);
             if(rep == null) return;
+            
             rep.transform.position = transform.position;
             rep.transform.rotation = transform.rotation;
             rep.transform.localScale = transform.localScale;
@@ -116,6 +153,7 @@ namespace Easy
             Vector3 direction = (_tage.position - transform.position);
             if (direction.magnitude < 0.01f)
             {
+                bMove = false;
                 Dispose();
                 return;
             }

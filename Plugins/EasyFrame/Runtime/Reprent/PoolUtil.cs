@@ -151,6 +151,10 @@ namespace Easy
             if (list.items != null && list.items.Count < _maxSize)
             {
                 list.releaseCount++;
+                if (list.activeItems.Count > 2000)
+                {
+                    Debug.Log("");
+                }
                 list.activeItems.Remove(element);
                 list.items.Add(element);
                 _maps[key] = list;
@@ -175,33 +179,32 @@ namespace Easy
         }
         public void Clear()
         {
+            if(_maps == null) return;
             for (int i = _maps.Keys.Count -1; i >=0; i--)
             {
                 var key = _maps.Keys.ElementAt(i);
                 var pool = _maps[key];
-                var usedFrame = Time.frameCount - pool.lastUseFrame;
-
-                if (usedFrame < 1000  || pool.activeItems.Count > 0 )
-                {
-                   continue;
-                }
 
                 if (pool.items == null)
                 {
-                    Debug.LogError($"{key} is valid.");
-                    continue;
+                    foreach (var obj in pool.items)
+                    {
+                        _destoryFunc?.Invoke(key, obj);
+                    }
+                    pool.items.Clear();
                 }
-                foreach (var obj in pool.items)
+
+                if (pool.activeItems == null)
                 {
-                    _destoryFunc?.Invoke(key, obj);
+                    foreach (var obj in pool.activeItems)
+                    {
+                        _destoryFunc?.Invoke(key, obj);
+                    }
+                    pool.activeItems.Clear();
                 }
-                foreach (var obj in pool.activeItems)
-                {
-                    _destoryFunc?.Invoke(key, obj);
-                }
-                pool.activeItems.Clear();
-                pool.items.Clear();
             }
+            
+            _maps.Clear();
         }
     }
 

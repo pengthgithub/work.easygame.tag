@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace Easy
@@ -17,7 +18,10 @@ namespace Easy
         bip_l_hand,   // 左手武器
         bip_r_hand,    // 右手武器
         bip_bullet,
-        bip_bullet01
+        bip_bullet01,
+        bullet03,
+        bullet04,
+        bullet05
     }
 
     public enum CustomLayer
@@ -31,15 +35,6 @@ namespace Easy
     public partial class Represent
     {
         /// <summary>
-        /// 启用特效
-        /// </summary>
-        public static bool EnableSfx = true;
-        /// <summary>
-        /// 启用角色
-        /// </summary>
-        public static bool EnableActor = true;
-        
-        /// <summary>
         /// 检测生命周期
         /// </summary>
         public bool CheckLifeTag;
@@ -49,13 +44,43 @@ namespace Easy
         /// </summary>
         public float CenterAngle
         {
-            get=> _0Control? _0Control.CenterAngle: 0;
+            get=> __0Control? __0Control.CenterAngle: 0;
             set
             {
-                if (_0Control)
+                if (__0Control)
                 {
-                    _0Control.CenterAngle = value;
+                    __0Control.CenterAngle = value;
                 }
+            }
+        }
+        
+        /// <summary>
+        /// 加载完成后调用
+        /// </summary>
+        public bool FlipX
+        {
+            get
+            {
+                return __0Control? __0Control.FlipX: false;
+            }
+            set
+            {
+                if(__0Control) __0Control.FlipX = value;
+            }
+        }
+        
+        /// <summary>
+        /// 加载完成后调用
+        /// </summary>
+        public bool FlipY
+        {
+            get
+            {
+                return __0Control? __0Control.FlipY: false;
+            }
+            set
+            {
+                if(__0Control) __0Control.FlipY = value;
             }
         }
 
@@ -68,16 +93,15 @@ namespace Easy
                 if (_layer != value)
                 {
                     _layer = value;
-                    if (_0Control) _0Control.Layer = (int)_layer;
+                    if (__0Control) __0Control.Layer = (int)_layer;
                 }
             }
         }
 
         private void Play()
         {
-            if(!_0Control) return;
-            _0Control.complete = PlayEnd;
-            _0Control.Play(_animationName);
+            if(!__0Control) return;
+            __0Control.Play(_animationName);
         }
         private void PlayEnd(string name)
         {
@@ -86,16 +110,22 @@ namespace Easy
         
         private void SetActive()
         {
-            if(!_0Control) return;
-            _0Control.Active = _active;
+            if(!__0Control) return;
+            __0Control.Active = _active;
         }
 
         public bool OutLine
         {
+            get
+            {
+                if(!__0Control) return false;
+                return __0Control.EnableOutLine;
+            }
             set
             {
-                if(!_0Control) return;
-                _0Control.EnableOutLine = value;
+                if(!__0Control) return;
+                __0Control.OutLineColor = Color.white;
+                __0Control.EnableOutLine = value;
             }
         }
 
@@ -103,20 +133,22 @@ namespace Easy
         // 资源加载
         //====================================================================
         #region 资源加载
-        public Control _0Control;
-        private bool _0LoadEnd = false;
+        public Control __0Control;
+        private bool __0LoadEnd = false;
         
-        
-        private float _loadTime;
+        private float _loadResUsingTime; //资源加载耗时，用于动画播放的时候，从动画中间开始播放
         /// <summary>
         /// 加载表现
         /// </summary>
         private void LoadRepresent()
         {
             if (string.IsNullOrEmpty(url)) return;
-            _loadTime = Time.realtimeSinceStartup;
+            
+            _loadResUsingTime = Time.realtimeSinceStartup;
+            
+            __stat = RepresentStat.RsLoadingRes;
             // 同一份资源不重复加载
-            if (!_0LoadEnd)
+            if (!__0LoadEnd)
             {
                 LoaderMgr.LoadPrefabAsync<Object>(url, LoadAssetEnd);
             }
@@ -125,35 +157,25 @@ namespace Easy
                 Show();
             }
         }
-        private bool lateLoad = false;
-        private void LateLoadPrefab()
-        {
-            if(lateLoad) return;
-            lateLoad = true;
-            LoadRepresent();
-        }
-
+        
         private async void LoadAssetEnd(Object origin)
         {
-            if (isDisposed || !origin) return;
+            if (__stat >= RepresentStat.RsDisposing  || !origin) return;
            
-            if (origin is SfxParticle && EnableSfx)
+            if (origin is SfxParticle)
             {
                 var _sfxParticle = ScriptableObject.Instantiate(origin) as SfxParticle;
-                while (Owner && Owner._0LoadEnd == false)
-                {
-                    await Task.Delay(1);
-                }
-                if (isDisposed) return;
+                if (__stat >= RepresentStat.RsDisposing) return;
                 InitTag(_sfxParticle);
             }
-            else if(EnableActor)
+            else
             {
                 var _represent = Instantiate(origin as GameObject, gameObject.transform, false);
-                _0Control = _represent.GetComponent<Control>();
+                __0Control = _represent.GetComponent<Control>();
+                __0Control.complete = PlayEnd;
             }
             Show();
-            _0LoadEnd = true;
+            __0LoadEnd = true;
         }
         
         private void Show()
@@ -162,20 +184,21 @@ namespace Easy
             {
                 transform.position = Owner.Position;
             }
+            
+            ResetTag();
+            
+            var useTime = Time.realtimeSinceStartup - _loadResUsingTime;
+            SetActive();
 
-            if (EnableSfx)
+            if (__0Control)
             {
-                ResetTag();
+                __0Control.Init();
+                __0Control.Play(_animationName, false, useTime);
             }
             
-            if (EnableActor)
-            {
-                var useTime = Time.realtimeSinceStartup - _loadTime;
-                SetActive();
-                if(_0Control) _0Control.Play(_animationName, false, useTime);
-            }
-
             completeEvent?.Invoke();
+
+            __stat = RepresentStat.RsLoadEnd;
         }
 
         /// <summary>
@@ -185,9 +208,9 @@ namespace Easy
         /// <returns></returns>
         public Transform GetLocator(LocatorType locator)
         {
-            if (_0Control)
+            if (__0Control)
             {
-                return _0Control.GetLocator(locator);
+                return __0Control.GetLocator(locator);
             }
             return transform;
         }

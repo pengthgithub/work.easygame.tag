@@ -47,7 +47,11 @@ namespace Easy
             var result = _sceneHandle.Scene.IsValid();
             if (result)
             {
-               Represent.PoolInit(200);
+                if(url.Contains("out_game") == false) Represent.PoolInit(200);
+                else
+                {
+                    Represent.PoolInit(50);
+                }
             }
             return result;
         }

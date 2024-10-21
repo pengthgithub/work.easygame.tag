@@ -1,18 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using UnityEditor;
 using UnityEngine;
 
 namespace Easy
 {
     [Icon("Packages/EasyFrame/Editor/Icon/sfx_icon.png")][ExecuteAlways] public class SfxControl : MonoBehaviour
     {
-        [SerializeField] private Animator animator;
+        [SerializeField] public Animator animator;
         [SerializeField] [Range(0,3)] private float speed = 1.0f;
-        [SerializeField] private List<ParticleSystem> particleSystems = new List<ParticleSystem>();
-        [SerializeField] private List<TrailRenderer>  trailRenders = new List<TrailRenderer>();
-        [SerializeField] private List<LineRenderer> lineRenders = new List<LineRenderer>();
-        
+        [SerializeField] public List<ParticleSystem> particleSystems = new List<ParticleSystem>();
+        [SerializeField] public List<TrailRenderer>  trailRenders = new List<TrailRenderer>();
+        [SerializeField] public List<LineRenderer> lineRenders = new List<LineRenderer>();
+        [SerializeField] public List<ClipData> animLists = new List<ClipData>();
         /// <summary>
         /// 改变速度
         /// </summary>
@@ -88,24 +87,42 @@ namespace Easy
                 }
             }
         }
+
+        public void Stop()
+        {
+            if (particleSystems.Count != 0)
+            {
+                foreach (var ps in particleSystems)
+                {
+                    if (ps) ps.Stop();
+                }
+            }
+
+            if (animator)
+            {
+                foreach (var data in animLists)
+                {
+                    if (data.enabled)
+                    {
+                        animator.Play(data.name);
+                        return;
+                    }
+                }
+            }
+            
+        }
         
         /// <summary>
         /// 释放
         /// </summary>
         public void Dispose()
         {
+            gameObject.SetActive(false);
             if (trailRenders.Count != 0)
             {
                 foreach (var trail in trailRenders)
                 {
                     if (trail) trail.Clear();
-                }
-            }
-            if (particleSystems.Count != 0)
-            {
-                foreach (var ps in particleSystems)
-                {
-                    if (ps) ps.Stop();
                 }
             }
 
@@ -117,87 +134,12 @@ namespace Easy
         //====================================================================
         #region 编辑器离线优化
         #if UNITY_EDITOR
+        [Header("编辑器")]
         [SerializeField] public int nodeCount;
+        [SerializeField] public int renderCount;
         [SerializeField] public int particleCount;
         [SerializeField] public bool hideChild = false;
         [SerializeField] public int fileSize;
-        /// <summary>
-        /// 加倍
-        /// </summary>
-        public void Add()
-        {
-            var ps = gameObject.GetComponentsInChildren<ParticleSystem>();
-            foreach (var ren in ps)
-            {
-                var main = ren.main;
-                main.maxParticles += main.maxParticles;
-            }
-            
-            OnValidate();
-        }
-        /// <summary>
-        /// 减半
-        /// </summary>
-        public void Sub()
-        {
-            var ps = gameObject.GetComponentsInChildren<ParticleSystem>();
-            foreach (var ren in ps)
-            {
-                var main = ren.main;
-                if (main.maxParticles > 1)
-                {
-                    main.maxParticles = (int)(main.maxParticles * 0.5f);
-                }
-            }
-            OnValidate();
-        }
-
-        public void CalSize()
-        {
-            var path = AssetDatabase.GetAssetPath(this);
-            if (!string.IsNullOrEmpty(path))
-            {
-                FileInfo fileInfo = new FileInfo(path);
-                // 检查文件是否存在
-                if (fileInfo.Exists)
-                {
-                    fileSize = (int)(fileInfo.Length/1024); // 文件大小（以字节为单位）
-                    fileInfo = null;
-                }
-            }
-        }
-        
-        private void OnValidate()
-        {
-            if (transform.childCount != 0)
-            {
-                transform.GetChild(0).hideFlags = hideChild ? HideFlags.HideInHierarchy : HideFlags.None;
-            }
-            nodeCount = gameObject.GetComponentsInChildren<Transform>().Length;
-            
-            particleCount = 0;
-            particleSystems.Clear();
-            var ps = gameObject.GetComponentsInChildren<ParticleSystem>();
-            foreach (var ren in ps)
-            {
-                particleSystems.Add(ren);
-                particleCount += ren.main.maxParticles;
-            }
-            
-            trailRenders.Clear();
-            var renders = gameObject.GetComponentsInChildren<TrailRenderer>();
-            foreach (var ren in renders)
-            {
-                trailRenders.Add(ren);
-            } 
-            
-            lineRenders.Clear();
-            var lineRender = gameObject.GetComponentsInChildren<LineRenderer>();
-            foreach (var ren in lineRender)
-            {
-                lineRenders.Add(ren);
-            } 
-        }
         #endif
         #endregion
     }
